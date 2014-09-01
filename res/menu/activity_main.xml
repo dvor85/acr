@@ -1,0 +1,35 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/menu_Enable_record"
+        android:enabled="false"
+        android:icon="@drawable/ic_record_enable"
+        android:orderInCategory="100"
+        android:title="@string/menu_Enable_record"/>
+    <item
+        android:id="@+id/menu_Disable_record"
+        android:enabled="false"
+        android:icon="@drawable/ic_record_disable"
+        android:orderInCategory="100"
+        android:title="@string/menu_Disable_record"/>
+    <item
+        android:id="@+id/menu_about"
+        android:icon="@drawable/ic_about"
+        android:orderInCategory="100"
+        android:title="@string/menu_about"/>
+    <item
+        android:id="@+id/menu_see_terms"
+        android:icon="@drawable/ic_menu_example"
+        android:orderInCategory="100"
+        android:title="@string/menu_terms"/>
+    <item
+        android:id="@+id/menu_privacy_policy"
+        android:icon="@drawable/ic_menu_example"
+        android:orderInCategory="100"
+        android:title="@string/menu_privacy_policy"/>
+	<item
+        android:id="@+id/menu_delete_all"
+        android:icon="@drawable/ic_delete_all"
+        android:orderInCategory="100"
+        android:title="@string/menu_delete_all"/>
+</menu>
