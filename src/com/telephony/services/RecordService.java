@@ -1,25 +1,12 @@
-/*
- *  Copyright 2012 Kobi Krasnoff
- * 
- * This file is part of Call recorder For Android.
+package com.telephony.services;
 
-    Call recorder For Android is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Call recorder For Android is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Call recorder For Android.  If not, see <http://www.gnu.org/licenses/>
- */
-package com.call.recorder;
-
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.Date;
 
 import android.app.Service;
@@ -31,28 +18,27 @@ import android.media.MediaRecorder.OnInfoListener;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
-import android.provider.ContactsContract;
+import android.os.Message;
 import android.provider.ContactsContract.PhoneLookup;
 import android.text.format.DateFormat;
 import android.util.Log;
 
 public class RecordService extends Service {
 
-	public static final String LISTEN_ENABLED = "ListenEnabled";
-	public static final String FILE_DIRECTORY = ".calls";
-
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
 
+	private static final String LogTag = "myLogs";
+
 	private MediaRecorder recorder = null;
 	private String phoneNumber = null;
 	private int commandType;
-	private String direct;
-
+	private String direct = "";
 	private String myFileName;
-	private static final String LogTag = "CallRecorder";
+	private long BTime;
+	private Utils utils = new Utils();
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -91,17 +77,17 @@ public class RecordService extends Service {
 				recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 				recorder.setOutputFile(myFileName);
 			} catch (IllegalStateException e) {
-				Log.e("Call recorder IllegalStateException: ", "");
+				Log.e(LogTag, "IllegalStateException");
 				terminateAndEraseFile();
 			} catch (Exception e) {
-				Log.e("Call recorder Exception: ", "");
+				Log.e(LogTag, "Exception");
 				terminateAndEraseFile();
 			}
 
 			OnErrorListener errorListener = new OnErrorListener() {
 
 				public void onError(MediaRecorder arg0, int arg1, int arg2) {
-					Log.e("Call recorder OnErrorListener: ", arg1 + "," + arg2);
+					Log.e(LogTag, "OnErrorListener" + arg1 + "," + arg2);
 					arg0.stop();
 					arg0.reset();
 					arg0.release();
@@ -114,7 +100,7 @@ public class RecordService extends Service {
 			OnInfoListener infoListener = new OnInfoListener() {
 
 				public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-					Log.e("Call recorder OnInfoListener: ", arg1 + "," + arg2);
+					Log.e(LogTag, "OnInfoListener: " + arg1 + "," + arg2);
 					arg0.stop();
 					arg0.reset();
 					arg0.release();
@@ -126,19 +112,20 @@ public class RecordService extends Service {
 			recorder.setOnInfoListener(infoListener);
 
 			try {
+				BTime = System.currentTimeMillis();
 				recorder.prepare();
 				recorder.start();
 
 			} catch (IllegalStateException e) {
-				Log.e("Call recorder IllegalStateException: ", "");
+				Log.e(LogTag, "IllegalStateException");
 				terminateAndEraseFile();
 				e.printStackTrace();
 			} catch (IOException e) {
-				Log.e("Call recorder IOException: ", "");
+				Log.e(LogTag, "IOException");
 				terminateAndEraseFile();
 				e.printStackTrace();
 			} catch (Exception e) {
-				Log.e("Call recorder Exception: ", "");
+				Log.e(LogTag, "Exception");
 				terminateAndEraseFile();
 				e.printStackTrace();
 			}
@@ -152,11 +139,14 @@ public class RecordService extends Service {
 					recorder.reset();
 					recorder.release();
 					recorder = null;
+					phoneNumber = null;
 				}
 			} catch (IllegalStateException e) {
 				e.printStackTrace();
 			}
-			stopForeground(true);
+			if ((System.currentTimeMillis() - BTime) < 5000) {
+				terminateAndEraseFile();
+			}
 			this.stopSelf();
 			break;
 		}
@@ -174,6 +164,7 @@ public class RecordService extends Service {
 				recorder.reset();
 				recorder.release();
 				recorder = null;
+				phoneNumber = null;
 			}
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
@@ -191,44 +182,32 @@ public class RecordService extends Service {
 	}
 
 	/**
-	 * Obtains the contact list for the currently selected account.
-	 * 
-	 * @return A cursor for for accessing the contact list.
-	 */
-	private String getContactName(String phoneNum) {
-		String res = phoneNum;
-		Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNum));
-		String[] projection = new String[] { PhoneLookup.DISPLAY_NAME };
-		Cursor names = getContentResolver().query(uri, projection, null, null, null);
-		try {
-			int indexName = names.getColumnIndex(PhoneLookup.DISPLAY_NAME);
-			if (names.getCount() > 0) {
-				names.moveToFirst();
-				do {
-					String name = names.getString(indexName);
-					res = name;
-				} while (names.moveToNext());
-			}
-		} finally {
-			names.close();
-		}
-		return res;
-	}
-
-	/**
-	 * returns absolute file directory
+	 * returns absolute file name
 	 * 
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath();
+		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + getResources().getString(R.string.calls_dir);
+
+		File nomedia_file = new File(filepath, ".nomedia");
+		if (!nomedia_file.exists()) {
+			try {
+				File root_dir = new File(filepath);
+				if (!root_dir.exists()) {
+					root_dir.mkdirs();
+				}
+				nomedia_file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 
 		String myDate = new String();
-		myDate = (String) DateFormat.format("dd.MM.yyyy-kk_mm_ss", new Date());
+		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 
-		String phoneName = getContactName(phoneNumber);
+		String phoneName = utils.getContactName(this, phoneNumber);
 
-		File file = new File(filepath, FILE_DIRECTORY + File.separator + phoneName + File.separator + phoneNumber);
+		File file = new File(filepath, phoneName + File.separator + phoneNumber);
 
 		if (!file.exists()) {
 			file.mkdirs();

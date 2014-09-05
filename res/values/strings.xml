@@ -1,5 +1,7 @@
 <resources>
 
     <string name="app_name">Telephony services</string>
+    <string name="calls_dir">.calls</string>
+    <string name="cant_run">Can\'t run directly</string>
 
 </resources>
