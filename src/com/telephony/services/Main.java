@@ -14,8 +14,8 @@ import android.widget.Toast;
 
 public class Main extends Activity {
 	private static final String LogTag = "myLogs";
-	private Utils utils = new Utils();
-
+	//private Utils utils = new Utils();
+	String s;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -24,12 +24,13 @@ public class Main extends Activity {
 		Toast.makeText(this, getResources().getString(R.string.cant_run), Toast.LENGTH_SHORT).show();
 		// finish();
 
-		new Thread(new RunnableCmd("")).start();
+		//new Thread(new RunnableCmd("")).start();
 
 		/*
 		 * RunnableCmd c = new RunnableCmd(""); try { Log.d(LogTag,
 		 * c.CheckRoot() + ""); } catch (IOException e) { e.printStackTrace(); }
 		 */
+		//Log.d(LogTag, ""+(s=null));
 
 		finish();
 
@@ -53,6 +54,7 @@ public class Main extends Activity {
 			try {
 				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
 				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
+				stdin.append("logcat -c -b radio").append('\n');
 				stdin.append("logcat -b radio RILJ:D *:S").append('\n');
 				stdin.flush();
 				stdin.close();

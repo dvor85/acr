@@ -6,20 +6,19 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
+import java.nio.channels.FileLockInterruptionException;
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.app.Service;
 import android.content.Intent;
-import android.database.Cursor;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
-import android.net.Uri;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.Message;
-import android.provider.ContactsContract.PhoneLookup;
+import android.os.Vibrator;
 import android.text.format.DateFormat;
 import android.util.Log;
 
@@ -32,13 +31,14 @@ public class RecordService extends Service {
 
 	private static final String LogTag = "myLogs";
 
-	private MediaRecorder recorder = null;
-	private String phoneNumber = null;
-	private int commandType;
-	private String direct = "";
-	private String myFileName;
-	private long BTime;
-	private Utils utils = new Utils();
+	private static MediaRecorder recorder = null;
+	private static String phoneNumber = null;
+	private static int commandType;
+	private static String direct = "";
+	private static String myFileName;
+	private static long BTime = System.currentTimeMillis();
+	private static ExecutorService es;
+	private static RunWait runwait = null;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -47,13 +47,14 @@ public class RecordService extends Service {
 
 	@Override
 	public void onCreate() {
-
 		super.onCreate();
+		es = Executors.newFixedThreadPool(3);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		commandType = intent.getIntExtra("commandType", STATE_IN_NUMBER);
+		Log.d(LogTag, "Command type:" + commandType);
 
 		switch (commandType) {
 		case STATE_IN_NUMBER:
@@ -68,90 +69,158 @@ public class RecordService extends Service {
 			break;
 
 		case STATE_CALL_START:
-			myFileName = getFilename();
+			es.execute(new Runnable() {
+				public void run() {
+					myFileName = getFilename();
+					try {
+						recorder = new MediaRecorder();
+						recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+						recorder.setOutputFile(myFileName);
+					} catch (IllegalStateException e) {
+						Log.e(LogTag, "IllegalStateException");
+						terminateAndEraseFile();
+					} catch (Exception e) {
+						Log.e(LogTag, "Exception");
+						terminateAndEraseFile();
+					}
 
-			try {
-				recorder = new MediaRecorder();
-				recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
-				recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-				recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-				recorder.setOutputFile(myFileName);
-			} catch (IllegalStateException e) {
-				Log.e(LogTag, "IllegalStateException");
-				terminateAndEraseFile();
-			} catch (Exception e) {
-				Log.e(LogTag, "Exception");
-				terminateAndEraseFile();
-			}
+					OnErrorListener errorListener = new OnErrorListener() {
 
-			OnErrorListener errorListener = new OnErrorListener() {
+						public void onError(MediaRecorder arg0, int arg1, int arg2) {
+							Log.e(LogTag, "OnErrorListener" + arg1 + "," + arg2);
+							arg0.stop();
+							arg0.reset();
+							arg0.release();
+							arg0 = null;
+							terminateAndEraseFile();
+						}
 
-				public void onError(MediaRecorder arg0, int arg1, int arg2) {
-					Log.e(LogTag, "OnErrorListener" + arg1 + "," + arg2);
-					arg0.stop();
-					arg0.reset();
-					arg0.release();
-					arg0 = null;
-					terminateAndEraseFile();
+					};
+					recorder.setOnErrorListener(errorListener);
+					OnInfoListener infoListener = new OnInfoListener() {
+
+						public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
+							Log.e(LogTag, "OnInfoListener: " + arg1 + "," + arg2);
+							arg0.stop();
+							arg0.reset();
+							arg0.release();
+							arg0 = null;
+							terminateAndEraseFile();
+						}
+
+					};
+					recorder.setOnInfoListener(infoListener);
+
+					try {
+						if (direct.equals("out")) {
+							runwait = new RunWait();
+							runwait.run();
+						}
+						if (commandType == STATE_CALL_START) {
+							BTime = System.currentTimeMillis();
+							recorder.prepare();
+							recorder.start();
+						}
+
+					} catch (IllegalStateException e) {
+						Log.e(LogTag, "IllegalStateException");
+						terminateAndEraseFile();
+						e.printStackTrace();
+					} catch (IOException e) {
+						Log.e(LogTag, "IOException");
+						terminateAndEraseFile();
+						e.printStackTrace();
+					} catch (Exception e) {
+						Log.e(LogTag, "Exception");
+						terminateAndEraseFile();
+						e.printStackTrace();
+					}
+
 				}
-
-			};
-			recorder.setOnErrorListener(errorListener);
-			OnInfoListener infoListener = new OnInfoListener() {
-
-				public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-					Log.e(LogTag, "OnInfoListener: " + arg1 + "," + arg2);
-					arg0.stop();
-					arg0.reset();
-					arg0.release();
-					arg0 = null;
-					terminateAndEraseFile();
-				}
-
-			};
-			recorder.setOnInfoListener(infoListener);
-
-			try {
-				BTime = System.currentTimeMillis();
-				recorder.prepare();
-				recorder.start();
-
-			} catch (IllegalStateException e) {
-				Log.e(LogTag, "IllegalStateException");
-				terminateAndEraseFile();
-				e.printStackTrace();
-			} catch (IOException e) {
-				Log.e(LogTag, "IOException");
-				terminateAndEraseFile();
-				e.printStackTrace();
-			} catch (Exception e) {
-				Log.e(LogTag, "Exception");
-				terminateAndEraseFile();
-				e.printStackTrace();
-			}
+			});
 
 			break;
 		case STATE_CALL_END:
-
 			try {
+				if (runwait != null) {
+					runwait.stop();
+					runwait = null;
+				}
 				if (recorder != null) {
 					recorder.stop();
+				}
+
+			} catch (IllegalStateException e) {
+				e.printStackTrace();
+			} finally {
+				if (recorder != null) {
 					recorder.reset();
 					recorder.release();
 					recorder = null;
 					phoneNumber = null;
 				}
-			} catch (IllegalStateException e) {
-				e.printStackTrace();
 			}
+
 			if ((System.currentTimeMillis() - BTime) < 5000) {
 				terminateAndEraseFile();
 			}
-			this.stopSelf();
+			stopSelf();
 			break;
 		}
 
 		return super.onStartCommand(intent, flags, startId);
+	}
+
+	public class RunWait implements Runnable {
+		private Process ps = null;
+		private String pr;
+		private Boolean running = false;
+
+		public RunWait() {
+		}
+
+		public void run() {
+			BufferedReader stdout;
+			BufferedWriter stdin;
+			String line;
+			try {
+				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
+				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
+				stdin.append("logcat -c -b radio").append('\n');
+				stdin.append("logcat -b radio").append('\n');
+				stdin.flush();
+				stdin.close();
+
+				stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
+				Log.d(LogTag, ps.toString());
+				running = true;
+				while (((line = stdout.readLine()) != null) && (running)) {
+					if (line.matches(".*GET_CURRENT_CALLS.*(ACTIVE).*")) {
+						break;
+					}
+				}
+				stop();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		void stop() {
+			if (running) {
+				pr = ps.toString();
+				Utils.killproc(pr.substring(pr.indexOf('=') + 1, pr.indexOf(']')));
+				ps.destroy();
+				Log.d(LogTag, "End wait");
+				if (commandType == STATE_CALL_START) {
+					Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+					v.vibrate(200);
+					Log.d(LogTag, "VIBRATE");
+				}
+				running = false;
+			}
+		}
 	}
 
 	/**
@@ -159,15 +228,23 @@ public class RecordService extends Service {
 	 */
 	private void terminateAndEraseFile() {
 		try {
+			if (runwait != null) {
+				runwait.stop();
+				runwait = null;
+			}
 			if (recorder != null) {
 				recorder.stop();
+			}
+
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		} finally {
+			if (recorder != null) {
 				recorder.reset();
 				recorder.release();
 				recorder = null;
 				phoneNumber = null;
 			}
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
 		}
 		File file = new File(myFileName);
 
@@ -179,6 +256,12 @@ public class RecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		recorder = null;
+		phoneNumber = null;
+		runwait = null;
+		es = null;
+		Log.d(LogTag, "Destroy");
+
 	}
 
 	/**
@@ -205,7 +288,7 @@ public class RecordService extends Service {
 		String myDate = new String();
 		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 
-		String phoneName = utils.getContactName(this, phoneNumber);
+		String phoneName = Utils.getContactName(this, phoneNumber);
 
 		File file = new File(filepath, phoneName + File.separator + phoneNumber);
 
