@@ -131,7 +131,7 @@ public class RecordService extends Service {
 				recorder.setOnInfoListener(infoListener);
 
 				try {
-					if (direct.equals(CALL_OUT_DIRECTION) && Utils.CheckRoot()) {
+					if (direct.equals(CALL_OUT_DIRECTION)) {
 						runwait = new RunWait();
 						runwait.run();
 					}
