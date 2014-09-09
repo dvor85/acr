@@ -9,7 +9,6 @@ import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Intent;
@@ -29,12 +28,12 @@ public class RecordService extends Service {
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
 
-	private static final String CALL_IN_DIRECTION = "in";
-	private static final String CALL_OUT_DIRECTION = "out";
+	private static final String CALL_INCOMING = "in";
+	private static final String CALL_OUTGOING = "out";
 
 	private static final String LogTag = "myLogs";
 
-	private MediaRecorder recorder = null;
+	private MyRecorder recorder = null;
 	private String phoneNumber = null;
 	private int commandType;
 	private String direct = "";
@@ -51,7 +50,7 @@ public class RecordService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		recorder = new MediaRecorder();
+		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
 		Log.d(LogTag, "Service Create");
 
@@ -80,12 +79,12 @@ public class RecordService extends Service {
 
 			switch (commandType) {
 			case STATE_IN_NUMBER:
-				direct = CALL_IN_DIRECTION;
+				direct = CALL_INCOMING;
 				if (phoneNumber == null)
 					phoneNumber = intent.getStringExtra("phoneNumber");
 				break;
 			case STATE_OUT_NUMBER:
-				direct = CALL_OUT_DIRECTION;
+				direct = CALL_OUTGOING;
 				if (phoneNumber == null)
 					phoneNumber = intent.getStringExtra("phoneNumber");
 				break;
@@ -131,7 +130,7 @@ public class RecordService extends Service {
 				recorder.setOnInfoListener(infoListener);
 
 				try {
-					if (direct.equals(CALL_OUT_DIRECTION)) {
+					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
 						runwait = new RunWait();
 						runwait.run();
 					}
@@ -155,17 +154,14 @@ public class RecordService extends Service {
 					}
 					if (recorder != null) {
 						recorder.stop();
-					}
-
-				} catch (IllegalStateException e) {
-					e.printStackTrace();
-				} finally {
-					if (recorder != null) {
 						recorder.reset();
 						recorder.release();
 						recorder = null;
 						phoneNumber = null;
 					}
+
+				} catch (IllegalStateException e) {
+					e.printStackTrace();
 				}
 
 				if ((System.currentTimeMillis() - BTime) < 5000) {
@@ -231,8 +227,8 @@ public class RecordService extends Service {
 			if (running) {
 				new Utils.KillProc("su").killTree(ppid);
 				ps.destroy();
-				if (commandType == STATE_CALL_START) {
-					((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(200);
+				if ((commandType == STATE_CALL_START) && (getResources().getBoolean(R.bool.vibrate))) {
+					((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(getResources().getInteger(R.integer.time_vibro));
 					Log.d(LogTag, "VIBRATE");
 				}
 				running = false;
@@ -253,17 +249,14 @@ public class RecordService extends Service {
 			}
 			if (recorder != null) {
 				recorder.stop();
-			}
-
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		} finally {
-			if (recorder != null) {
 				recorder.reset();
 				recorder.release();
 				recorder = null;
 				phoneNumber = null;
 			}
+
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
 		}
 		File file = new File(myFileName);
 

@@ -22,8 +22,10 @@ public class Utils {
 			stdin.append("exit").append('\n');
 			stdin.flush();
 			stdin.close();
+			ps.waitFor();
 			res = ps.exitValue() == 0;
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return res;
