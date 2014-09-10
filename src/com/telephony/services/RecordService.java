@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.telephony.services.Utils.PreferenceUtils;
+
 import android.app.Service;
 import android.content.Intent;
 import android.media.MediaRecorder;
@@ -34,6 +36,7 @@ public class RecordService extends Service {
 	private static final String LogTag = "myLogs";
 
 	private MyRecorder recorder = null;
+	private PreferenceUtils sPref = null;
 	private String phoneNumber = null;
 	private int commandType;
 	private String direct = "";
@@ -52,7 +55,8 @@ public class RecordService extends Service {
 		super.onCreate();
 		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
-		Log.d(LogTag, "Service Create");
+		sPref = new PreferenceUtils(this);
+		Log.d(LogTag, getClass().getName() + " Create");
 
 	}
 
@@ -64,7 +68,7 @@ public class RecordService extends Service {
 		return super.onStartCommand(intent, flags, startId);
 	}
 
-	public class RunService implements Runnable {
+	private class RunService implements Runnable {
 		final Intent intent;
 		final int flags;
 		final int startId;
@@ -179,7 +183,7 @@ public class RecordService extends Service {
 
 	}
 
-	public class RunWait implements Runnable {
+	private class RunWait implements Runnable {
 		private Process ps = null;
 		private Boolean running = false;
 		private String ppid;
@@ -227,8 +231,8 @@ public class RecordService extends Service {
 			if (running) {
 				new Utils.KillProc("su").killTree(ppid);
 				ps.destroy();
-				if ((commandType == STATE_CALL_START) && (getResources().getBoolean(R.bool.vibrate))) {
-					((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(getResources().getInteger(R.integer.time_vibro));
+				if ((commandType == STATE_CALL_START) && (sPref.getVibrate())) {
+					((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrateTime());
 					Log.d(LogTag, "VIBRATE");
 				}
 				running = false;
@@ -275,8 +279,9 @@ public class RecordService extends Service {
 		}
 		phoneNumber = null;
 		runwait = null;
+		sPref = null;
 		es = null;
-		Log.d(LogTag, "Service Destroy");
+		Log.d(LogTag, getClass().getName() + " Destroy");
 
 	}
 
@@ -286,7 +291,7 @@ public class RecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + getResources().getString(R.string.calls_dir);
+		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + sPref.getRootCallsDir();
 
 		File nomedia_file = new File(filepath, ".nomedia");
 		if (!nomedia_file.exists()) {

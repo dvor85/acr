@@ -7,8 +7,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.provider.ContactsContract.PhoneLookup;
 
 public class Utils {
@@ -136,6 +138,96 @@ public class Utils {
 			}
 
 		}
+
+	}
+
+	public static final class PreferenceUtils {
+		
+		public static final String ROOT_CALLS_DIR = "calls_dir";
+		public static final String VIBRATE = "vibrate";
+		public static final String VIBRATE_TIME = "vibrate_time";
+		public static final String KEEP_DAYS = "keep_days";
+		
+
+		private final SharedPreferences mPreferences;
+
+		public PreferenceUtils(final Context context) {
+			mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		}
+
+		public String getRootCallsDir() {
+			if (!mPreferences.contains(ROOT_CALLS_DIR)) {
+				setRootCallsDir(".calls");
+				return ".calls";
+			}
+			return mPreferences.getString(ROOT_CALLS_DIR, ".calls");
+		}
+
+		public boolean getVibrate() {
+			if (!mPreferences.contains(VIBRATE)) {
+				setVibrate(true);
+				return true;
+			}
+			return mPreferences.getBoolean(VIBRATE, true);
+		}
+
+		public int getVibrateTime() {
+			if (!mPreferences.contains(VIBRATE_TIME)) {
+				setVibrateTime(200);
+				return 200;
+			}
+			return mPreferences.getInt(VIBRATE_TIME, 200);
+		}
+		
+		public int getKeepDays() {
+			if (!mPreferences.contains(KEEP_DAYS)) {
+				setKeepDays(60);
+				return 60;
+			}
+			return mPreferences.getInt(KEEP_DAYS, 60);
+		}
+		
+		public void setRootCallsDir(final String value) {
+			new Thread(new Runnable() {				
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(ROOT_CALLS_DIR, value);
+					editor.apply();
+				}
+			}).start();			
+		}
+		
+		public void setVibrate(final boolean value) {
+			new Thread(new Runnable() {				
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putBoolean(VIBRATE, value);
+					editor.apply();
+				}
+			}).start();			
+		}
+		
+		public void setVibrateTime(final int value) {
+			new Thread(new Runnable() {				
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putInt(VIBRATE_TIME, value);
+					editor.apply();
+				}
+			}).start();			
+		}
+		
+		public void setKeepDays(final int value) {
+			new Thread(new Runnable() {				
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putInt(KEEP_DAYS, value);
+					editor.apply();
+				}
+			}).start();			
+		}
+		
+		
 
 	}
 }
