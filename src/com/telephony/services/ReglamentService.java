@@ -74,7 +74,8 @@ public class ReglamentService extends Service {
 					public boolean accept(File dir, String filename) {
 						File f = new File(dir, filename);
 						Date today = new Date();
-						return new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())));
+						return new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())))
+								&& !filename.endsWith(".nomedia");
 					}
 				});
 			}

@@ -1,6 +1,9 @@
 package com.telephony.services;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -22,6 +25,11 @@ public class Main extends Activity {
 		// startService(myIntent);
 
 		// Log.d(LogTag, Utils.CheckRoot()+"");
+		//AlarmManager am;
+		//am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+		//Intent myIntent = new Intent(this, ReglamentService.class);
+		//PendingIntent pmyIntent = PendingIntent.getService(this, 0, myIntent, 0);
+		//am.setRepeating(AlarmManager.ELAPSED_REALTIME, 50000L, AlarmManager.INTERVAL_DAY, pmyIntent);
 
 		finish();
 	}
