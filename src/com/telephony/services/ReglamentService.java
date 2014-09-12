@@ -60,22 +60,25 @@ public class ReglamentService extends Service {
 				if (f.isDirectory()) {
 					deleteFiles(f, filter);
 				} else {
-					// f.delete();
+					f.delete();
 					Log.d(LogTag, "delete file: " + f.getAbsoluteFile());
 				}
 			}
 		}
 
 		public void run() {
-			String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + sPref.getRootCallsDir();
+			String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+					+ sPref.getRootCallsDir();
 			File root_dir = new File(filepath);
 			if (root_dir.exists()) {
 				deleteFiles(root_dir, new FilenameFilter() {
 					public boolean accept(File dir, String filename) {
 						File f = new File(dir, filename);
 						Date today = new Date();
-						return new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())))
-								&& !filename.endsWith(".nomedia");
+						return !f.isHidden()
+								&& sPref.getKeepDays() > 0
+								&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())));
+
 					}
 				});
 			}

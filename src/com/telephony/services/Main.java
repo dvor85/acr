@@ -10,8 +10,6 @@ import android.widget.Toast;
 
 public class Main extends Activity {
 	private static final String LogTag = "myLogs";
-	// private Utils utils = new Utils();
-	String s;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -25,12 +23,11 @@ public class Main extends Activity {
 		// startService(myIntent);
 
 		// Log.d(LogTag, Utils.CheckRoot()+"");
-		//AlarmManager am;
-		//am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-		//Intent myIntent = new Intent(this, ReglamentService.class);
-		//PendingIntent pmyIntent = PendingIntent.getService(this, 0, myIntent, 0);
-		//am.setRepeating(AlarmManager.ELAPSED_REALTIME, 50000L, AlarmManager.INTERVAL_DAY, pmyIntent);
-
+//		AlarmManager am = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+//		Intent myIntent = new Intent(this, ReglamentService.class);
+//		PendingIntent pmyIntent = PendingIntent.getService(this, 0, myIntent, 0);
+//		am.set(AlarmManager.ELAPSED_REALTIME, 50000L, pmyIntent);
+		
 		finish();
 	}
 
