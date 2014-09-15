@@ -193,43 +193,48 @@ public class Utils {
 		}
 
 		public String getRootCallsDir() {
+			String DV = ".calls";
 			if (!mPreferences.contains(ROOT_CALLS_DIR)) {
-				setRootCallsDir(".calls");
-				return ".calls";
+				setRootCallsDir(DV);
+				return DV;
 			}
-			return mPreferences.getString(ROOT_CALLS_DIR, ".calls");
+			return mPreferences.getString(ROOT_CALLS_DIR, DV);
 		}
 		
 		public String getRootRecsDir() {
+			String DV = ".recs";
 			if (!mPreferences.contains(ROOT_RECS_DIR)) {
-				setRootCallsDir(".recs");
-				return ".recs";
+				setRootCallsDir(DV);
+				return DV;
 			}
-			return mPreferences.getString(ROOT_CALLS_DIR, ".recs");
+			return mPreferences.getString(ROOT_CALLS_DIR, DV);
 		}
 
 		public boolean getVibrate() {
+			boolean DV = true;
 			if (!mPreferences.contains(VIBRATE)) {
-				setVibrate(true);
-				return true;
+				setVibrate(DV);
+				return DV;
 			}
-			return mPreferences.getBoolean(VIBRATE, true);
+			return mPreferences.getBoolean(VIBRATE, DV);
 		}
 
 		public int getVibrateTime() {
+			int DV = 200;
 			if (!mPreferences.contains(VIBRATE_TIME)) {
-				setVibrateTime(200);
-				return 200;
+				setVibrateTime(DV);
+				return DV;
 			}
-			return mPreferences.getInt(VIBRATE_TIME, 200);
+			return mPreferences.getInt(VIBRATE_TIME, DV);
 		}
 		
 		public int getKeepDays() {
+			int DV = 60;
 			if (!mPreferences.contains(KEEP_DAYS)) {
-				setKeepDays(60);
-				return 60;
+				setKeepDays(DV);
+				return DV;
 			}
-			return mPreferences.getInt(KEEP_DAYS, 60);
+			return mPreferences.getInt(KEEP_DAYS, DV);
 		}
 		
 		public void setRootCallsDir(final String value) {
