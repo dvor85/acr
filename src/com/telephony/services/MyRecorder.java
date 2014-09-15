@@ -3,7 +3,7 @@ package com.telephony.services;
 import android.media.MediaRecorder;
 
 public class MyRecorder extends MediaRecorder {
-	private Boolean started = false;
+	protected Boolean started = false;
 	
 	@Override
 	public void start() throws IllegalStateException {
@@ -34,6 +34,7 @@ public class MyRecorder extends MediaRecorder {
 		}
 		super.release();		
 	}
+	
 	
 
 }

@@ -10,10 +10,29 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.PhoneLookup;
 
 public class Utils {
+	
+	public static final int STATE_IN_NUMBER = 0;
+	public static final int STATE_OUT_NUMBER = 1;
+	public static final int STATE_CALL_START = 2;
+	public static final int STATE_CALL_END = 3;
+	public static final int STATE_REC_START = 4;
+	public static final int STATE_REC_STOP = 5;
+
+	public static final String CALL_INCOMING = "in";
+	public static final String CALL_OUTGOING = "out";
+	public static final String MIC_RECORD = "rec";
+	
+	public static final int MEDIA_MOUNTED = 0;
+	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
+	public static final int NO_MEDIA = 2;
+
+	public static final String LogTag = "myLogs";
+	
 	public static Boolean CheckRoot() {
 		BufferedWriter stdin;
 		Process ps = null;
@@ -31,6 +50,23 @@ public class Utils {
 		}
 
 		return res;
+	}
+	
+	/**
+	 * checks if an external memory card is available
+	 * 
+	 * @return
+	 */
+	public static int updateExternalStorageState() {
+		String state = Environment.getExternalStorageState();
+		if (Environment.MEDIA_MOUNTED.equals(state)) {
+			return MEDIA_MOUNTED;
+		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+			return MEDIA_MOUNTED_READ_ONLY;
+		} else {
+			return NO_MEDIA;
+		}
+
 	}
 
 	/**
@@ -144,6 +180,7 @@ public class Utils {
 	public static final class PreferenceUtils {
 		
 		public static final String ROOT_CALLS_DIR = "calls_dir";
+		public static final String ROOT_RECS_DIR = "recs_dir";
 		public static final String VIBRATE = "vibrate";
 		public static final String VIBRATE_TIME = "vibrate_time";
 		public static final String KEEP_DAYS = "keep_days";
@@ -161,6 +198,14 @@ public class Utils {
 				return ".calls";
 			}
 			return mPreferences.getString(ROOT_CALLS_DIR, ".calls");
+		}
+		
+		public String getRootRecsDir() {
+			if (!mPreferences.contains(ROOT_RECS_DIR)) {
+				setRootCallsDir(".recs");
+				return ".recs";
+			}
+			return mPreferences.getString(ROOT_CALLS_DIR, ".recs");
 		}
 
 		public boolean getVibrate() {
@@ -192,6 +237,16 @@ public class Utils {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putString(ROOT_CALLS_DIR, value);
+					editor.apply();
+				}
+			}).start();			
+		}
+		
+		public void setRootRecsDir(final String value) {
+			new Thread(new Runnable() {				
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(ROOT_RECS_DIR, value);
 					editor.apply();
 				}
 			}).start();			

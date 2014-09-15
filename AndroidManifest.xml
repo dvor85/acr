@@ -41,7 +41,7 @@
             </intent-filter>
         </receiver>
 
-        <service android:name="RecordService" >
+        <service android:name="CallRecordService" >
         </service>
         <service android:name="ReglamentService" >
         </service>
@@ -51,6 +51,9 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <service android:name="RecRecordService" >
+        </service>
     </application>
 
 </manifest>
