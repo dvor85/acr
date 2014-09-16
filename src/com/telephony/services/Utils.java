@@ -1,10 +1,16 @@
 package com.telephony.services;
 
+import it.sauronsoftware.ftp4j.FTPClient;
+import it.sauronsoftware.ftp4j.FTPException;
+import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -93,7 +99,7 @@ public class Utils {
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 			}
-			context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
+			//context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -231,6 +237,39 @@ public class Utils {
 				e1.printStackTrace();
 			}
 
+		}
+
+	}
+
+	public static final class MyFTPClient extends FTPClient {
+
+		private URL url;
+
+		public MyFTPClient(String surl) {
+			super();
+			try {
+				this.url = new URL(surl);
+			} catch (MalformedURLException e) {				
+				e.printStackTrace();
+			}
+		}
+
+		public String[] connect() throws IllegalStateException, IOException, FTPIllegalReplyException, FTPException {
+			return super.connect(url.getHost(), url.getPort());
+		}
+
+		public void login() throws IllegalStateException, IOException, FTPIllegalReplyException, FTPException {
+
+			String[] userpass = url.getAuthority().split(":");
+			String username = "", password = "";
+			switch (userpass.length) {
+			case 2:
+				password = userpass[1];
+			case 1:
+				username = userpass[0];
+			}
+
+			super.login(username, password);
 		}
 
 	}
