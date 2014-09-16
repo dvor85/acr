@@ -2,6 +2,7 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,8 +60,11 @@ public class ReglamentService extends Service {
 				if (f.isDirectory()) {
 					deleteFiles(f, filter);
 				} else {
-					f.delete();
-					Log.d(Utils.LogTag, "delete file: " + f.getAbsoluteFile());
+					if (f.delete()) {
+						Log.d(Utils.LogTag, "delete file: " + f.getAbsoluteFile() + " success!");
+					} else {
+						Log.d(Utils.LogTag, "delete file: " + f.getAbsoluteFile() + " failed!");
+					}
 				}
 			}
 		}

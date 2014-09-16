@@ -11,7 +11,10 @@ public class BootCompetedReceiver extends BroadcastReceiver {
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		
 		Log.d(Utils.LogTag, "Receive BOOT_COMPLETED");
+		
+		Utils.setComponentState(context, Main.class, false);
 		AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		Intent myIntent = new Intent(context, ReglamentService.class);
 		PendingIntent pmyIntent = PendingIntent.getService(context, 0, myIntent, 0);

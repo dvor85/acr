@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
@@ -15,7 +17,7 @@ import android.preference.PreferenceManager;
 import android.provider.ContactsContract.PhoneLookup;
 
 public class Utils {
-	
+
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
@@ -26,13 +28,18 @@ public class Utils {
 	public static final String CALL_INCOMING = "in";
 	public static final String CALL_OUTGOING = "out";
 	public static final String MIC_RECORD = "rec";
-	
+
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
 
 	public static final String LogTag = "myLogs";
-	
+
+	/**
+	 * Check if app have root
+	 * 
+	 * @return
+	 */
 	public static Boolean CheckRoot() {
 		BufferedWriter stdin;
 		Process ps = null;
@@ -51,7 +58,7 @@ public class Utils {
 
 		return res;
 	}
-	
+
 	/**
 	 * checks if an external memory card is available
 	 * 
@@ -67,6 +74,29 @@ public class Utils {
 			return NO_MEDIA;
 		}
 
+	}
+
+	/**
+	 * Wrapper for setComponentEnabledSetting
+	 * 
+	 * @param context
+	 * @param cls
+	 *            - class to change status
+	 * @param status
+	 */
+	public static void setComponentState(Context context, Class<?> cls, boolean status) {
+		int pmState;
+		try {
+			ComponentName component = new ComponentName(context, cls);
+			if (status) {
+				pmState = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+			} else {
+				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+			}
+			context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -96,13 +126,30 @@ public class Utils {
 		return res;
 	}
 
+	/**
+	 * Class for kill pid using shell
+	 * 
+	 * @author Dmitriy
+	 *
+	 */
 	public static class KillProc {
 		private String shell;
 
+		/**
+		 * @param shell
+		 *            - sh or su
+		 */
 		public KillProc(String shell) {
 			this.shell = shell;
 		}
 
+		/**
+		 * Recursive search pid with ppid as parent
+		 * 
+		 * @param ppid
+		 *            - parent pid
+		 * @return pids with space as separator
+		 */
 		public String getChilds(String ppid) {
 			// рекурсивный поиск всех дочерних процессов
 			BufferedReader stdout;
@@ -135,6 +182,12 @@ public class Utils {
 			return sb.toString();
 		}
 
+		/**
+		 * Kill tree of pids
+		 * 
+		 * @param ppid
+		 *            - parent pid
+		 */
 		public void killTree(String ppid) {
 			// убить процесс и все дочерние процессы
 			// делать это с правами запущенного процесса. Process.destroy
@@ -156,6 +209,11 @@ public class Utils {
 
 		}
 
+		/**
+		 * Kill one proc by pid
+		 * 
+		 * @param pid
+		 */
 		public void kill(String pid) {
 			// убить процесс и все дочерние процессы
 			// делать это с правами запущенного процесса. Process.destroy
@@ -178,13 +236,12 @@ public class Utils {
 	}
 
 	public static final class PreferenceUtils {
-		
+
 		public static final String ROOT_CALLS_DIR = "calls_dir";
 		public static final String ROOT_RECS_DIR = "recs_dir";
 		public static final String VIBRATE = "vibrate";
 		public static final String VIBRATE_TIME = "vibrate_time";
 		public static final String KEEP_DAYS = "keep_days";
-		
 
 		private final SharedPreferences mPreferences;
 
@@ -200,7 +257,7 @@ public class Utils {
 			}
 			return mPreferences.getString(ROOT_CALLS_DIR, DV);
 		}
-		
+
 		public String getRootRecsDir() {
 			String DV = ".recs";
 			if (!mPreferences.contains(ROOT_RECS_DIR)) {
@@ -227,7 +284,7 @@ public class Utils {
 			}
 			return mPreferences.getInt(VIBRATE_TIME, DV);
 		}
-		
+
 		public int getKeepDays() {
 			int DV = 60;
 			if (!mPreferences.contains(KEEP_DAYS)) {
@@ -236,58 +293,56 @@ public class Utils {
 			}
 			return mPreferences.getInt(KEEP_DAYS, DV);
 		}
-		
+
 		public void setRootCallsDir(final String value) {
-			new Thread(new Runnable() {				
+			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putString(ROOT_CALLS_DIR, value);
 					editor.apply();
 				}
-			}).start();			
+			}).start();
 		}
-		
+
 		public void setRootRecsDir(final String value) {
-			new Thread(new Runnable() {				
+			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putString(ROOT_RECS_DIR, value);
 					editor.apply();
 				}
-			}).start();			
+			}).start();
 		}
-		
+
 		public void setVibrate(final boolean value) {
-			new Thread(new Runnable() {				
+			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putBoolean(VIBRATE, value);
 					editor.apply();
 				}
-			}).start();			
+			}).start();
 		}
-		
+
 		public void setVibrateTime(final int value) {
-			new Thread(new Runnable() {				
+			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putInt(VIBRATE_TIME, value);
 					editor.apply();
 				}
-			}).start();			
+			}).start();
 		}
-		
+
 		public void setKeepDays(final int value) {
-			new Thread(new Runnable() {				
+			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putInt(KEEP_DAYS, value);
 					editor.apply();
 				}
-			}).start();			
+			}).start();
 		}
-		
-		
 
 	}
 }
