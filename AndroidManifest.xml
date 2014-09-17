@@ -54,6 +54,8 @@
 
         <service android:name="RecRecordService" >
         </service>
+        <service android:name="UploadService" >
+        </service>
     </application>
 
 </manifest>

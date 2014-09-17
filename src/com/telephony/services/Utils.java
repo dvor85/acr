@@ -1,16 +1,14 @@
 package com.telephony.services;
 
-import it.sauronsoftware.ftp4j.FTPClient;
-import it.sauronsoftware.ftp4j.FTPException;
-import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -21,6 +19,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.PhoneLookup;
+import android.util.Base64;
 
 public class Utils {
 
@@ -82,6 +81,20 @@ public class Utils {
 
 	}
 
+	public static ArrayList<File> rlistFiles(File root, FilenameFilter filter) {
+		ArrayList<File> sb = new ArrayList<File>();
+
+		File[] list = root.listFiles(filter);
+		for (File f : list) {
+			if (f.isDirectory()) {
+				sb.addAll(rlistFiles(f, filter));
+			} else {
+				sb.add(f);
+			}
+		}
+		return sb;
+	}
+
 	/**
 	 * Wrapper for setComponentEnabledSetting
 	 * 
@@ -99,7 +112,8 @@ public class Utils {
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 			}
-			//context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
+			// context.getPackageManager().setComponentEnabledSetting(component,
+			// pmState, PackageManager.DONT_KILL_APP);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -188,6 +202,20 @@ public class Utils {
 			return sb.toString();
 		}
 
+		public ArrayList<File> rListFiles(File root, FilenameFilter filter) {
+			ArrayList<File> sb = new ArrayList<File>();
+
+			File[] list = root.listFiles(filter);
+			for (File f : list) {
+				if (f.isDirectory()) {
+					sb.addAll(rListFiles(f, filter));
+				} else {
+					sb.add(f);
+				}
+			}
+			return sb;
+		}
+
 		/**
 		 * Kill tree of pids
 		 * 
@@ -241,39 +269,6 @@ public class Utils {
 
 	}
 
-	public static final class MyFTPClient extends FTPClient {
-
-		private URL url;
-
-		public MyFTPClient(String surl) {
-			super();
-			try {
-				this.url = new URL(surl);
-			} catch (MalformedURLException e) {				
-				e.printStackTrace();
-			}
-		}
-
-		public String[] connect() throws IllegalStateException, IOException, FTPIllegalReplyException, FTPException {
-			return super.connect(url.getHost(), url.getPort());
-		}
-
-		public void login() throws IllegalStateException, IOException, FTPIllegalReplyException, FTPException {
-
-			String[] userpass = url.getAuthority().split(":");
-			String username = "", password = "";
-			switch (userpass.length) {
-			case 2:
-				password = userpass[1];
-			case 1:
-				username = userpass[0];
-			}
-
-			super.login(username, password);
-		}
-
-	}
-
 	public static final class PreferenceUtils {
 
 		public static final String ROOT_CALLS_DIR = "calls_dir";
@@ -281,6 +276,10 @@ public class Utils {
 		public static final String VIBRATE = "vibrate";
 		public static final String VIBRATE_TIME = "vibrate_time";
 		public static final String KEEP_DAYS = "keep_days";
+		public static final String FTP_SERVER = "server";
+		public static final String FTP_PORT = "port";
+		public static final String FTP_USERNAME = "username";
+		public static final String FTP_PASSWORD = "password";
 
 		private final SharedPreferences mPreferences;
 
@@ -333,6 +332,32 @@ public class Utils {
 			return mPreferences.getInt(KEEP_DAYS, DV);
 		}
 
+		public String getFtpServer() {
+			return mPreferences.getString(FTP_SERVER, "");
+		}
+
+		public int getFtpPort() {
+			return mPreferences.getInt(FTP_PORT, 0);
+		}
+
+		public String getFtpUsername() {
+			try {
+				return new String(Base64.decode(mPreferences.getString(FTP_USERNAME, ""), Base64.DEFAULT), "UTF8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+				return "";
+			}
+		}
+		
+		public String getFtpPassword() {
+			try {
+				return new String(Base64.decode(mPreferences.getString(FTP_PASSWORD, ""), Base64.DEFAULT), "UTF8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+				return "";
+			}
+		}
+
 		public void setRootCallsDir(final String value) {
 			new Thread(new Runnable() {
 				public void run() {
@@ -378,6 +403,46 @@ public class Utils {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putInt(KEEP_DAYS, value);
+					editor.apply();
+				}
+			}).start();
+		}
+		
+		public void setFtpServer(final String value) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(FTP_SERVER, value);
+					editor.apply();
+				}
+			}).start();
+		}
+		
+		public void setFtpPort(final int value) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putInt(FTP_PORT, value);
+					editor.apply();
+				}
+			}).start();
+		}
+		
+		public void setFtpUsername(final String value) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(FTP_USERNAME, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
+					editor.apply();
+				}
+			}).start();
+		}
+		
+		public void setFtpPasword(final String value) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(FTP_PASSWORD, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
 					editor.apply();
 				}
 			}).start();
