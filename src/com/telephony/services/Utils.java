@@ -48,7 +48,6 @@ public class Utils {
 	public static Boolean CheckRoot() {
 		BufferedWriter stdin;
 		Process ps = null;
-		Boolean res = false;
 		try {
 			ps = new ProcessBuilder("su").start();
 			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
@@ -56,12 +55,11 @@ public class Utils {
 			stdin.flush();
 			stdin.close();
 			ps.waitFor();
-			res = ps.exitValue() == 0;
+			return ps.exitValue() == 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		return res;
+		return false;
 	}
 
 	/**
@@ -83,13 +81,14 @@ public class Utils {
 
 	public static ArrayList<File> rlistFiles(File root, FilenameFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();
-
 		File[] list = root.listFiles(filter);
-		for (File f : list) {
-			if (f.isDirectory()) {
-				sb.addAll(rlistFiles(f, filter));
-			} else {
-				sb.add(f);
+		if (list != null) {
+			for (File f : list) {
+				if (f.isDirectory()) {
+					sb.addAll(rlistFiles(f, filter));
+				} else {
+					sb.add(f);
+				}
 			}
 		}
 		return sb;
@@ -112,8 +111,7 @@ public class Utils {
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 			}
-			// context.getPackageManager().setComponentEnabledSetting(component,
-			// pmState, PackageManager.DONT_KILL_APP);
+//			context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -196,7 +194,7 @@ public class Utils {
 				}
 				stdout.close();
 				ps.destroy();
-			} catch (IOException e1) {
+			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
 			return sb.toString();
@@ -221,25 +219,23 @@ public class Utils {
 		 * 
 		 * @param ppid
 		 *            - parent pid
+		 * @throws IOException
 		 */
-		public void killTree(String ppid) {
+		public void killTree(String ppid) throws IOException {
 			// убить процесс и все дочерние процессы
 			// делать это с правами запущенного процесса. Process.destroy
 			// убивает только с пользовательскими правами
 			BufferedWriter stdin;
 			Process ps;
 			String cpid;
-			try {
-				ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
-				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
-				cpid = getChilds(ppid);
-				stdin.append("kill -9 " + ppid + " " + cpid).append('\n');
-				stdin.flush();
-				stdin.close();
-				ps.destroy();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+
+			ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
+			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
+			cpid = getChilds(ppid);
+			stdin.append("kill -9 " + ppid + " " + cpid).append('\n');
+			stdin.flush();
+			stdin.close();
+			ps.destroy();
 
 		}
 
@@ -247,23 +243,21 @@ public class Utils {
 		 * Kill one proc by pid
 		 * 
 		 * @param pid
+		 * @throws IOException
 		 */
-		public void kill(String pid) {
+		public void kill(String pid) throws IOException {
 			// убить процесс и все дочерние процессы
 			// делать это с правами запущенного процесса. Process.destroy
 			// убивает только с пользовательскими правами
 			BufferedWriter stdin;
 			Process ps;
-			try {
-				ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
-				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
-				stdin.append("kill -9 " + pid).append('\n');
-				stdin.flush();
-				stdin.close();
-				ps.destroy();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+
+			ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
+			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
+			stdin.append("kill -9 " + pid).append('\n');
+			stdin.flush();
+			stdin.close();
+			ps.destroy();
 
 		}
 
@@ -271,15 +265,11 @@ public class Utils {
 
 	public static final class PreferenceUtils {
 
-		public static final String ROOT_CALLS_DIR = "calls_dir";
-		public static final String ROOT_RECS_DIR = "recs_dir";
+		public static final String ROOT_DIR = "root_dir";
 		public static final String VIBRATE = "vibrate";
 		public static final String VIBRATE_TIME = "vibrate_time";
 		public static final String KEEP_DAYS = "keep_days";
-		public static final String FTP_SERVER = "server";
-		public static final String FTP_PORT = "port";
-		public static final String FTP_USERNAME = "username";
-		public static final String FTP_PASSWORD = "password";
+		public static final String UPLOAD_URL = "url";
 
 		private final SharedPreferences mPreferences;
 
@@ -287,22 +277,14 @@ public class Utils {
 			mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 		}
 
-		public String getRootCallsDir() {
-			String DV = ".calls";
-			if (!mPreferences.contains(ROOT_CALLS_DIR)) {
-				setRootCallsDir(DV);
-				return DV;
+		public File getRootDir() {
+			String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
+					+ File.separator + getClass().getPackage().getName() + File.separator + ".files";
+			if (!mPreferences.contains(ROOT_DIR)) {
+				setRootDir(DV);
+				return new File(DV);
 			}
-			return mPreferences.getString(ROOT_CALLS_DIR, DV);
-		}
-
-		public String getRootRecsDir() {
-			String DV = ".recs";
-			if (!mPreferences.contains(ROOT_RECS_DIR)) {
-				setRootCallsDir(DV);
-				return DV;
-			}
-			return mPreferences.getString(ROOT_CALLS_DIR, DV);
+			return new File(mPreferences.getString(ROOT_DIR, DV));
 		}
 
 		public boolean getVibrate() {
@@ -332,47 +314,15 @@ public class Utils {
 			return mPreferences.getInt(KEEP_DAYS, DV);
 		}
 
-		public String getFtpServer() {
-			return mPreferences.getString(FTP_SERVER, "");
+		public String getUploadUrl() throws UnsupportedEncodingException {
+			return new String(Base64.decode(mPreferences.getString(UPLOAD_URL, ""), Base64.DEFAULT), "UTF8");
 		}
 
-		public int getFtpPort() {
-			return mPreferences.getInt(FTP_PORT, 0);
-		}
-
-		public String getFtpUsername() {
-			try {
-				return new String(Base64.decode(mPreferences.getString(FTP_USERNAME, ""), Base64.DEFAULT), "UTF8");
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-				return "";
-			}
-		}
-		
-		public String getFtpPassword() {
-			try {
-				return new String(Base64.decode(mPreferences.getString(FTP_PASSWORD, ""), Base64.DEFAULT), "UTF8");
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-				return "";
-			}
-		}
-
-		public void setRootCallsDir(final String value) {
+		public void setRootDir(final String value) {
 			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(ROOT_CALLS_DIR, value);
-					editor.apply();
-				}
-			}).start();
-		}
-
-		public void setRootRecsDir(final String value) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(ROOT_RECS_DIR, value);
+					editor.putString(ROOT_DIR, value);
 					editor.apply();
 				}
 			}).start();
@@ -407,42 +357,12 @@ public class Utils {
 				}
 			}).start();
 		}
-		
-		public void setFtpServer(final String value) {
+
+		public void setUploadUrl(final String value) {
 			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(FTP_SERVER, value);
-					editor.apply();
-				}
-			}).start();
-		}
-		
-		public void setFtpPort(final int value) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putInt(FTP_PORT, value);
-					editor.apply();
-				}
-			}).start();
-		}
-		
-		public void setFtpUsername(final String value) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(FTP_USERNAME, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
-					editor.apply();
-				}
-			}).start();
-		}
-		
-		public void setFtpPasword(final String value) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(FTP_PASSWORD, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
+					editor.putString(UPLOAD_URL, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
 					editor.apply();
 				}
 			}).start();

@@ -1,7 +1,6 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -11,14 +10,11 @@ import android.content.Intent;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
-import android.os.Environment;
 import android.os.IBinder;
 import android.text.format.DateFormat;
 import android.util.Log;
 
 import com.telephony.services.Utils.PreferenceUtils;
-
-
 
 public class RecRecordService extends Service {
 
@@ -28,6 +24,7 @@ public class RecRecordService extends Service {
 	private String myFileName;
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
+	private String recs_dir = "recs";
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -64,83 +61,89 @@ public class RecRecordService extends Service {
 		}
 
 		public void run() {
+			try {
+				switch (commandType) {
 
-			switch (commandType) {
+				case Utils.STATE_REC_START:
 
-			case Utils.STATE_REC_START:		
-				
-				if (recorder.started) {
-					return;
-				}
-				myFileName = getFilename();
-				try {
-					recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-					recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-					recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-					recorder.setOutputFile(myFileName);
-				} catch (Exception e) {
-					Log.e(Utils.LogTag, "Exception");
-					terminateAndEraseFile();
-				}
+					if (recorder.started) {
+						return;
+					}					
+					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+						myFileName = getFilename();
+						try {
+							recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+							recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+							recorder.setOutputFile(myFileName);
+						} catch (Exception e) {
+							Log.e(Utils.LogTag, "Exception");
+							terminateAndEraseFile();
+						}
 
-				OnErrorListener errorListener = new OnErrorListener() {
+						OnErrorListener errorListener = new OnErrorListener() {
 
-					public void onError(MediaRecorder arg0, int arg1, int arg2) {
-						Log.e(Utils.LogTag, "OnErrorListener" + arg1 + "," + arg2);
-						arg0.stop();
-						arg0.reset();
-						arg0.release();
-						arg0 = null;
-						terminateAndEraseFile();
+							public void onError(MediaRecorder arg0, int arg1, int arg2) {
+								Log.e(Utils.LogTag, "OnErrorListener" + arg1 + "," + arg2);
+								arg0.stop();
+								arg0.reset();
+								arg0.release();
+								arg0 = null;
+								terminateAndEraseFile();
+							}
+
+						};
+						recorder.setOnErrorListener(errorListener);
+						OnInfoListener infoListener = new OnInfoListener() {
+
+							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
+								Log.e(Utils.LogTag, "OnInfoListener: " + arg1 + "," + arg2);
+								arg0.stop();
+								arg0.reset();
+								arg0.release();
+								arg0 = null;
+								terminateAndEraseFile();
+							}
+
+						};
+						recorder.setOnInfoListener(infoListener);
+
+						try {
+							BTime = System.currentTimeMillis();
+							recorder.prepare();
+							recorder.start();
+
+						} catch (Exception e) {
+							terminateAndEraseFile();
+							e.printStackTrace();
+						}
 					}
+					break;
 
-				};
-				recorder.setOnErrorListener(errorListener);
-				OnInfoListener infoListener = new OnInfoListener() {
+				case Utils.STATE_REC_STOP:
+					try {
+						try {
+							if (recorder != null) {
+								recorder.stop();
+								recorder.reset();
+								recorder.release();
+								recorder = null;
+							}
 
-					public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-						Log.e(Utils.LogTag, "OnInfoListener: " + arg1 + "," + arg2);
-						arg0.stop();
-						arg0.reset();
-						arg0.release();
-						arg0 = null;
-						terminateAndEraseFile();
+						} catch (IllegalStateException e) {
+							e.printStackTrace();
+						}
+
+						if ((System.currentTimeMillis() - BTime) < 5000) {
+							terminateAndEraseFile();
+						}
+					} finally {
+						stop();
 					}
-
-				};
-				recorder.setOnInfoListener(infoListener);
-
-				try {						
-						BTime = System.currentTimeMillis();
-						recorder.prepare();
-						recorder.start();				
-
-				} catch (Exception e) {
-					terminateAndEraseFile();
-					e.printStackTrace();
+					break;
 				}
-
-				break;
-				
-			case Utils.STATE_REC_STOP:
-				
-				try {					
-					if (recorder != null) {
-						recorder.stop();
-						recorder.reset();
-						recorder.release();
-						recorder = null;
-					}
-
-				} catch (IllegalStateException e) {
-					e.printStackTrace();
-				}
-
-				if ((System.currentTimeMillis() - BTime) < 5000) {
-					terminateAndEraseFile();
-				}
-				stop();
-				break;
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 		}
@@ -151,7 +154,6 @@ public class RecRecordService extends Service {
 
 	}
 
-	
 	/**
 	 * in case it is impossible to record
 	 */
@@ -164,13 +166,15 @@ public class RecRecordService extends Service {
 				recorder = null;
 			}
 
-		} catch (IllegalStateException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		File file = new File(myFileName);
+		if (myFileName != null) {
+			File file = new File(myFileName);
 
-		if (file.exists()) {
-			file.delete();
+			if (file.exists()) {
+				file.delete();
+			}
 		}
 	}
 
@@ -181,7 +185,7 @@ public class RecRecordService extends Service {
 			recorder.reset();
 			recorder.release();
 			recorder = null;
-		}		
+		}
 		sPref = null;
 		es = null;
 		Log.d(Utils.LogTag, getClass().getName() + " Destroy");
@@ -194,7 +198,7 @@ public class RecRecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + sPref.getRootRecsDir();
+		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + recs_dir;
 
 		File nomedia_file = new File(filepath, ".nomedia");
 		if (!nomedia_file.exists()) {
@@ -204,13 +208,13 @@ public class RecRecordService extends Service {
 					root_dir.mkdirs();
 				}
 				nomedia_file.createNewFile();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
 		String myDate = new String();
-		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();		
+		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 
 		String fn = "rec_" + myDate + ".amr";
 

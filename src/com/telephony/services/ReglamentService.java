@@ -2,14 +2,13 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -70,20 +69,30 @@ public class ReglamentService extends Service {
 		}
 
 		public void run() {
-			String filepath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + sPref.getRootCallsDir();
-			File root_dir = new File(filepath);
-			if (root_dir.exists() && (sPref.getKeepDays() > 0) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
-				deleteFiles(root_dir, new FilenameFilter() {
-					public boolean accept(File dir, String filename) {
-						File f = new File(dir, filename);
-						Date today = new Date();
-						return !f.isHidden()
-								&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())));
+			try {				
+				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+					ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
+						public boolean accept(File dir, String filename) {
+							File f = new File(dir, filename);
+							Date today = new Date();
+							return !f.getName().equals(".nomedia")
+									&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())));
+						}
+					});
+					for (File file : list) {
+						if (file.delete()) {
+							Log.d(Utils.LogTag, "delete file: " + file.getAbsoluteFile() + " success!");
+						} else {
+							Log.d(Utils.LogTag, "delete file: " + file.getAbsoluteFile() + " failed!");
+						}
 					}
-				});
-			}
 
-			stop();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				stop();
+			}
 		}
 
 		public void stop() {
