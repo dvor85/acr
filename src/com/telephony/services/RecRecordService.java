@@ -66,19 +66,16 @@ public class RecRecordService extends Service {
 
 				case Utils.STATE_REC_START:
 
-					if (recorder.started) {
-						return;
-					}					
-					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						try {
 							recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 							recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
 							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 							recorder.setOutputFile(myFileName);
-						} catch (Exception e) {
-							Log.e(Utils.LogTag, "Exception");
+						} catch (Exception e) {							
 							terminateAndEraseFile();
+							e.printStackTrace();
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {

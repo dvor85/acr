@@ -85,10 +85,7 @@ public class CallRecordService extends Service {
 
 				case Utils.STATE_CALL_START:
 
-					if (recorder.started) {
-						return;
-					}					
-					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						try {
 							recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
@@ -96,8 +93,8 @@ public class CallRecordService extends Service {
 							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 							recorder.setOutputFile(myFileName);
 						} catch (Exception e) {
-							Log.e(Utils.LogTag, "Exception");
 							terminateAndEraseFile();
+							e.printStackTrace();
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {

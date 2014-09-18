@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,7 +65,9 @@ public class UploadService extends Service {
 						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 							public boolean accept(File dir, String filename) {
 								File f = new File(dir, filename);
-								return !f.isHidden();
+								Date today = new Date();
+								return !f.isHidden()
+										&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 15)));
 							}
 						});
 						for (File file : list) {
