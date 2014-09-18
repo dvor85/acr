@@ -43,29 +43,12 @@ public class ReglamentService extends Service {
 	private class RunService implements Runnable {
 		final Intent intent;
 		final int flags;
-		final int startId;
-		File[] FileList;
+		final int startId;		
 
 		public RunService(Intent intent, int flags, int startId) {
 			this.intent = intent;
 			this.flags = flags;
 			this.startId = startId;
-		}
-
-		public void deleteFiles(File root, FilenameFilter filter) {
-
-			File[] list = root.listFiles(filter);
-			for (File f : list) {
-				if (f.isDirectory()) {
-					deleteFiles(f, filter);
-				} else {
-					if (f.delete()) {
-						Log.d(Utils.LogTag, "delete file: " + f.getAbsoluteFile() + " success!");
-					} else {
-						Log.d(Utils.LogTag, "delete file: " + f.getAbsoluteFile() + " failed!");
-					}
-				}
-			}
 		}
 
 		public void run() {
