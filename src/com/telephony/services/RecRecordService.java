@@ -14,8 +14,6 @@ import android.os.IBinder;
 import android.text.format.DateFormat;
 import android.util.Log;
 
-import com.telephony.services.Utils.PreferenceUtils;
-
 public class RecRecordService extends Service {
 
 	private MyRecorder recorder = null;
@@ -37,14 +35,14 @@ public class RecRecordService extends Service {
 		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
 		sPref = new PreferenceUtils(this);
-		Log.d(Utils.LogTag, getClass().getName() + " Create");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		commandType = intent.getIntExtra("commandType", Utils.STATE_REC_START);
-		Log.d(Utils.LogTag, "Service " + startId + " Start");
+		Log.d(Utils.LOG_TAG, "Service " + startId + " Start");
 		es.execute(new RunService(intent, flags, startId));
 		return super.onStartCommand(intent, flags, startId);
 	}
@@ -81,7 +79,7 @@ public class RecRecordService extends Service {
 						OnErrorListener errorListener = new OnErrorListener() {
 
 							public void onError(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LogTag, "OnErrorListener" + arg1 + "," + arg2);
+								Log.e(Utils.LOG_TAG, "OnErrorListener" + arg1 + "," + arg2);
 								arg0.stop();
 								arg0.reset();
 								arg0.release();
@@ -94,7 +92,7 @@ public class RecRecordService extends Service {
 						OnInfoListener infoListener = new OnInfoListener() {
 
 							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LogTag, "OnInfoListener: " + arg1 + "," + arg2);
+								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
 								arg0.stop();
 								arg0.reset();
 								arg0.release();
@@ -185,7 +183,7 @@ public class RecRecordService extends Service {
 		}
 		sPref = null;
 		es = null;
-		Log.d(Utils.LogTag, getClass().getName() + " Destroy");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 
 	}
 

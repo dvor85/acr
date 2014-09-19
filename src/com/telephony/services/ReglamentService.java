@@ -12,8 +12,6 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.telephony.services.Utils.PreferenceUtils;
-
 public class ReglamentService extends Service {
 
 	private ExecutorService es;
@@ -30,7 +28,7 @@ public class ReglamentService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(3);
 		sPref = new PreferenceUtils(this);
-		Log.d(Utils.LogTag, getClass().getName() + " Create");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
 	@Override
@@ -64,9 +62,9 @@ public class ReglamentService extends Service {
 					});
 					for (File file : list) {
 						if (file.delete()) {
-							Log.d(Utils.LogTag, "delete file: " + file.getAbsoluteFile() + " success!");
+							Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " success!");
 						} else {
-							Log.d(Utils.LogTag, "delete file: " + file.getAbsoluteFile() + " failed!");
+							Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " failed!");
 						}
 					}
 
@@ -90,7 +88,7 @@ public class ReglamentService extends Service {
 		super.onDestroy();
 		es = null;
 		sPref = null;
-		Log.d(Utils.LogTag, getClass().getName() + " Destroy");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 
 }

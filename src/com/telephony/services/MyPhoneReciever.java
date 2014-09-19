@@ -12,7 +12,7 @@ public class MyPhoneReciever extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Log.d(Utils.LogTag, intent.toUri(Intent.URI_INTENT_SCHEME));
+		Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 
 		if (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) {
 			if (intent.getAction().equals(Intent.ACTION_NEW_OUTGOING_CALL)) {

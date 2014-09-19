@@ -13,8 +13,6 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.telephony.services.Utils.PreferenceUtils;
-
 public class UploadService extends Service {
 
 	private ExecutorService es;
@@ -33,7 +31,7 @@ public class UploadService extends Service {
 		es = Executors.newFixedThreadPool(3);
 		sPref = new PreferenceUtils(this);
 		sPref.setUploadUrl("ftp://upload:ghjuhtcc@10.0.0.253:21");
-		Log.d(Utils.LogTag, getClass().getName() + " Create");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
 	@Override
@@ -59,7 +57,7 @@ public class UploadService extends Service {
 			try {
 				ftp = new MyFTPClient();
 				ftp.connect(sPref.getUploadUrl());
-				Log.d(Utils.LogTag, ftp.getReplyString());
+				Log.d(Utils.LOG_TAG, ftp.getReplyString());
 				if (ftp.isAuthorized) {					
 					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
@@ -71,7 +69,7 @@ public class UploadService extends Service {
 							}
 						});
 						for (File file : list) {
-							Log.d(Utils.LogTag, "try upload: " + file.getAbsolutePath());
+							Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
 							if (ftp.uploadFile(sPref.getRootDir(), file)) {
 								ftp.setHidden(file);
 							} else {
@@ -107,7 +105,7 @@ public class UploadService extends Service {
 		es = null;
 		sPref = null;
 		ftp = null;
-		Log.d(Utils.LogTag, getClass().getName() + " Destroy");
+		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 
 }
