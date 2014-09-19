@@ -32,6 +32,12 @@ public class Utils {
 	public static final int NO_MEDIA = 2;
 
 	public static final String LOG_TAG = "myLogs";
+	
+	public static final long SECOND = 1000L;
+	public static final long MINUTE = SECOND * 60;
+	public static final long HOUR = MINUTE * 60;
+	public static final long DAY = HOUR * 24;
+	
 
 	/**
 	 * Check if app have root
@@ -54,6 +60,7 @@ public class Utils {
 		} finally {
 			if (ps != null) {
 				ps.destroy();
+				ps = null;
 			}
 		}
 
@@ -109,8 +116,8 @@ public class Utils {
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 			}
-			// context.getPackageManager().setComponentEnabledSetting(component,
-			// pmState, PackageManager.DONT_KILL_APP);
+			 context.getPackageManager().setComponentEnabledSetting(component,
+			 pmState, PackageManager.DONT_KILL_APP);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

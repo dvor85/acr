@@ -3,7 +3,6 @@ package com.telephony.services;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Date;
@@ -83,7 +82,18 @@ public class CallRecordService extends Service {
 
 				case Utils.STATE_CALL_START:
 
-					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if (Utils.CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
+						runwait = new RunWait();
+						runwait.run();
+						if ((commandType == Utils.STATE_CALL_START) && (sPref.getVibrate())) {
+							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrateTime());
+							Log.d(Utils.LOG_TAG, "VIBRATE");
+						}
+					}
+					
+
+					if ((commandType == Utils.STATE_CALL_START)
+							&& (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						try {
 							recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
@@ -123,16 +133,9 @@ public class CallRecordService extends Service {
 						recorder.setOnInfoListener(infoListener);
 
 						try {
-							if (Utils.CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
-								runwait = new RunWait();
-								runwait.run();
-							}
-							if (commandType == Utils.STATE_CALL_START) {
-								BTime = System.currentTimeMillis();
-								recorder.prepare();
-								recorder.start();
-							}
-
+							BTime = System.currentTimeMillis();
+							recorder.prepare();
+							recorder.start();
 						} catch (Exception e) {
 							terminateAndEraseFile();
 							e.printStackTrace();
@@ -145,7 +148,7 @@ public class CallRecordService extends Service {
 						try {
 							if (runwait != null) {
 								runwait.stop();
-								runwait = null;
+								runwait = null; 
 							}
 							if (recorder != null) {
 								recorder.stop();
@@ -159,7 +162,7 @@ public class CallRecordService extends Service {
 							e.printStackTrace();
 						}
 
-						if ((System.currentTimeMillis() - BTime) < 5000) {
+						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
 							terminateAndEraseFile();
 						}
 					} finally {
@@ -192,9 +195,9 @@ public class CallRecordService extends Service {
 			BufferedReader stdout;
 			BufferedWriter stdin;
 			String line;
-			try {
+			try {				
 				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
-				ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
+				ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));				
 				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
 				stdin.append("logcat -c -b radio").append('\n');
 				stdin.append("logcat -b radio").append('\n');
@@ -207,38 +210,29 @@ public class CallRecordService extends Service {
 						break;
 					}
 				}
-
-				new Thread(new Runnable() {
-					public void run() {
-						stop();
-					}
-				}).start();
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				if ((!running) && (ps != null)) {
-					ps.destroy();
-				}
+				stop();
 			}
 		}
 
 		void stop() {
 
-			if ((!running) && (ps != null)) {
+			if (running) {
 				try {
-					new Proc("su").killTree(ppid);
-					ps.destroy();
-					if ((commandType == Utils.STATE_CALL_START) && (sPref.getVibrate())) {
-						((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrateTime());
-						Log.d(Utils.LOG_TAG, "VIBRATE");
-					}
-				} catch (IOException e) {
+//					Log.d(Utils.LOG_TAG, "Childs of " + ppid + " " + new Proc("su").getChilds(ppid));
+//					new Proc("su").killTree(ppid);
+					if (ps != null) {
+						ps.destroy();
+						ps = null;
+					}					
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				running = false;
 				Log.d(Utils.LOG_TAG, "Stop wait");
 			}
-
 		}
 	}
 
@@ -249,7 +243,7 @@ public class CallRecordService extends Service {
 		try {
 			if (runwait != null) {
 				runwait.stop();
-				runwait = null;
+				runwait = null; 
 			}
 			if (recorder != null) {
 				recorder.stop();

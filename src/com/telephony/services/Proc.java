@@ -43,11 +43,11 @@ public class Proc {
 			stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 			while (((line = stdout.readLine()) != null)) {
 				res.add(line);
-			}
+			}			
 		} finally {
-			if (ps != null) {
-				kill(ppid);
+			if (ps != null) {				
 				ps.destroy();
+				ps = null;
 			}
 		}
 		return res.toArray(new String[res.size()]);

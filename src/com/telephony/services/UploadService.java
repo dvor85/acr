@@ -28,7 +28,7 @@ public class UploadService extends Service {
 	public void onCreate() {
 
 		super.onCreate();
-		es = Executors.newFixedThreadPool(3);
+		es = Executors.newFixedThreadPool(1);
 		sPref = new PreferenceUtils(this);
 		sPref.setUploadUrl("ftp://upload:ghjuhtcc@10.0.0.253:21");
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
@@ -65,7 +65,7 @@ public class UploadService extends Service {
 								File f = new File(dir, filename);
 								Date today = new Date();
 								return !f.isHidden()
-										&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 15)));
+										&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15)));
 							}
 						});
 						for (File file : list) {

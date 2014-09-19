@@ -71,7 +71,7 @@ public class RecRecordService extends Service {
 							recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
 							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 							recorder.setOutputFile(myFileName);
-						} catch (Exception e) {							
+						} catch (Exception e) {
 							terminateAndEraseFile();
 							e.printStackTrace();
 						}
@@ -125,11 +125,11 @@ public class RecRecordService extends Service {
 								recorder = null;
 							}
 
-						} catch (IllegalStateException e) {
+						} catch (Exception e) {
 							e.printStackTrace();
 						}
 
-						if ((System.currentTimeMillis() - BTime) < 5000) {
+						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
 							terminateAndEraseFile();
 						}
 					} finally {

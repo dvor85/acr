@@ -26,7 +26,7 @@ public class ReglamentService extends Service {
 	public void onCreate() {
 
 		super.onCreate();
-		es = Executors.newFixedThreadPool(3);
+		es = Executors.newFixedThreadPool(1);		
 		sPref = new PreferenceUtils(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
@@ -57,7 +57,7 @@ public class ReglamentService extends Service {
 							File f = new File(dir, filename);
 							Date today = new Date();
 							return !f.getName().equals(".nomedia")
-									&& new Date(f.lastModified()).before(new Date(today.getTime() - (1000L * 60 * 60 * 24 * sPref.getKeepDays())));
+									&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.DAY * sPref.getKeepDays())));
 						}
 					});
 					for (File file : list) {
