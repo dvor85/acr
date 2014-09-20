@@ -24,8 +24,9 @@ public final class PreferenceUtils {
 	}
 
 	public File getRootDir() {
-		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
-				+ File.separator + getClass().getPackage().getName() + File.separator + ".files";
+		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
+				+ File.separator + "data" + File.separator + "." + getClass().getPackage().getName() + File.separator
+				+ "files";
 		if (!mPreferences.contains(ROOT_DIR)) {
 			setRootDir(DV);
 			return new File(DV);
