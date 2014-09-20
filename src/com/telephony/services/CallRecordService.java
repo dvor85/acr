@@ -26,11 +26,11 @@ public class CallRecordService extends Service {
 	private String phoneNumber = null;
 	private int commandType;
 	private String direct = "";
-	private String myFileName;
+	private String myFileName = null;
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
 	private RunWait runwait = null;
-	private String calls_dir = "calls";
+	
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -90,7 +90,6 @@ public class CallRecordService extends Service {
 							Log.d(Utils.LOG_TAG, "VIBRATE");
 						}
 					}
-					
 
 					if ((commandType == Utils.STATE_CALL_START)
 							&& (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
@@ -148,7 +147,7 @@ public class CallRecordService extends Service {
 						try {
 							if (runwait != null) {
 								runwait.stop();
-								runwait = null; 
+								runwait = null;
 							}
 							if (recorder != null) {
 								recorder.stop();
@@ -195,9 +194,9 @@ public class CallRecordService extends Service {
 			BufferedReader stdout;
 			BufferedWriter stdin;
 			String line;
-			try {				
+			try {
 				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
-				ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));				
+				ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
 				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
 				stdin.append("logcat -c -b radio").append('\n');
 				stdin.append("logcat -b radio").append('\n');
@@ -210,27 +209,32 @@ public class CallRecordService extends Service {
 						break;
 					}
 				}
+				stdout.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				stop();
+				new Thread(new Runnable() {
+					public void run() {
+						stop();
+					}
+				}).start();
+
 			}
 		}
 
 		void stop() {
 
 			if (running) {
+				running = false;
 				try {
-//					Log.d(Utils.LOG_TAG, "Childs of " + ppid + " " + new Proc("su").getChilds(ppid));
-//					new Proc("su").killTree(ppid);
-					if (ps != null) {
-						ps.destroy();
-						ps = null;
-					}					
+//					Log.d(Utils.LOG_TAG, "BEGIN");
+//					Log.d(Utils.LOG_TAG, "Childs of " + ppid + ": " + new Proc("su").getChilds("398"));
+					
+					new Proc("su").killTree(ppid);
+					Proc.processDestroy(ps);
 				} catch (Exception e) {
 					e.printStackTrace();
-				}
-				running = false;
+				}				
 				Log.d(Utils.LOG_TAG, "Stop wait");
 			}
 		}
@@ -243,7 +247,7 @@ public class CallRecordService extends Service {
 		try {
 			if (runwait != null) {
 				runwait.stop();
-				runwait = null; 
+				runwait = null;
 			}
 			if (recorder != null) {
 				recorder.stop();
@@ -287,7 +291,7 @@ public class CallRecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + calls_dir;
+		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + Utils.CALLS_DIR;
 
 		File nomedia_file = new File(filepath, ".nomedia");
 		if (!nomedia_file.exists()) {

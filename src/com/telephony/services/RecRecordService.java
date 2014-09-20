@@ -19,10 +19,9 @@ public class RecRecordService extends Service {
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
 	private int commandType;
-	private String myFileName;
+	private String myFileName = null;
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
-	private String recs_dir = "recs";
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -193,7 +192,7 @@ public class RecRecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + recs_dir;
+		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + Utils.RECS_DIR;
 
 		File nomedia_file = new File(filepath, ".nomedia");
 		if (!nomedia_file.exists()) {

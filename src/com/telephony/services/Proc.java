@@ -25,6 +25,18 @@ public class Proc {
 		this.shell = shell;
 	}
 
+	public static void processDestroy(Process ps) {
+		try {
+			if (ps != null) {
+				ps.exitValue();
+			}
+		} catch (IllegalThreadStateException e) {
+			ps.destroy();
+		} finally {
+			ps = null;
+		}
+	}
+
 	public String[] exec(String[] cmds) throws IOException {
 		Process ps = null;
 		BufferedReader stdout;
@@ -43,12 +55,10 @@ public class Proc {
 			stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 			while (((line = stdout.readLine()) != null)) {
 				res.add(line);
-			}			
-		} finally {
-			if (ps != null) {				
-				ps.destroy();
-				ps = null;
 			}
+			stdout.close();
+		} finally {
+			processDestroy(ps);
 		}
 		return res.toArray(new String[res.size()]);
 	}
@@ -66,7 +76,7 @@ public class Proc {
 		String[] psinfo, ps;
 		StringBuilder sb = new StringBuilder();
 
-		ps = exec(new String[] { "toolbox ps" });
+		ps = exec(new String[] { "toolbox ps | toolbox grep " + ppid });
 		for (String psline : ps) {
 			psinfo = psline.split(" +");
 			if (psinfo[2].equals(ppid)) {
@@ -87,7 +97,7 @@ public class Proc {
 	public void killTree(String ppid) throws IOException {
 		// убить процесс и все дочерние процессы
 		// делать это с правами запущенного процесса. Process.destroy
-		// убивает только с пользовательскими правами
+		// убивает только с пользовательскими правами ???
 		String cpid = getChilds(ppid);
 		exec(new String[] { "kill -9 " + ppid + " " + cpid });
 	}
@@ -101,7 +111,7 @@ public class Proc {
 	public void kill(String pid) throws IOException {
 		// убить процесс
 		// делать это с правами запущенного процесса. Process.destroy
-		// убивает только с пользовательскими правами
+		// убивает только с пользовательскими правами ???
 		exec(new String[] { "kill -9 " + pid });
 	}
 

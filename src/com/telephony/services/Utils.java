@@ -33,6 +33,9 @@ public class Utils {
 
 	public static final String LOG_TAG = "myLogs";
 	
+	public static final String CALLS_DIR = "calls";
+	public static final String RECS_DIR = "recs";
+	
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
 	public static final long HOUR = MINUTE * 60;
