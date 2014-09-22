@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Intent;
@@ -30,7 +31,6 @@ public class CallRecordService extends Service {
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
 	private RunWait runwait = null;
-	
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -71,13 +71,11 @@ public class CallRecordService extends Service {
 				switch (commandType) {
 				case Utils.STATE_IN_NUMBER:
 					direct = Utils.CALL_INCOMING;
-					if (phoneNumber == null)
-						phoneNumber = intent.getStringExtra("phoneNumber");
+					phoneNumber = intent.getStringExtra("phoneNumber");
 					break;
 				case Utils.STATE_OUT_NUMBER:
 					direct = Utils.CALL_OUTGOING;
-					if (phoneNumber == null)
-						phoneNumber = intent.getStringExtra("phoneNumber");
+					phoneNumber = intent.getStringExtra("phoneNumber");
 					break;
 
 				case Utils.STATE_CALL_START:
@@ -91,8 +89,7 @@ public class CallRecordService extends Service {
 						}
 					}
 
-					if ((commandType == Utils.STATE_CALL_START)
-							&& (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((commandType == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						try {
 							recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
@@ -145,16 +142,13 @@ public class CallRecordService extends Service {
 				case Utils.STATE_CALL_END:
 					try {
 						try {
-							if (runwait != null) {
-								runwait.stop();
-								runwait = null;
-							}
 							if (recorder != null) {
 								recorder.stop();
 								recorder.reset();
-								recorder.release();
-								recorder = null;
-								phoneNumber = null;
+								//recorder.release();
+							}
+							if (runwait != null) {
+								runwait.stop();
 							}
 
 						} catch (Exception e) {
@@ -176,7 +170,8 @@ public class CallRecordService extends Service {
 		}
 
 		public void stop() {
-			stopSelf();
+			Log.d(Utils.LOG_TAG, "Stop service: " + startId);
+			stopSelf(startId);
 		}
 
 	}
@@ -223,18 +218,20 @@ public class CallRecordService extends Service {
 		}
 
 		void stop() {
-
 			if (running) {
 				running = false;
 				try {
-//					Log.d(Utils.LOG_TAG, "BEGIN");
-//					Log.d(Utils.LOG_TAG, "Childs of " + ppid + ": " + new Proc("su").getChilds("398"));
-					
+					// Log.d(Utils.LOG_TAG, "BEGIN");
+					// Log.d(Utils.LOG_TAG, "Childs of " + ppid + ": " + new
+					// Proc("su").getChilds("398"));
+
+					// Thread.currentThread();
 					new Proc("su").killTree(ppid);
+					//TimeUnit.SECONDS.sleep(10);
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 					e.printStackTrace();
-				}				
+				}
 				Log.d(Utils.LOG_TAG, "Stop wait");
 			}
 		}
@@ -245,16 +242,13 @@ public class CallRecordService extends Service {
 	 */
 	private void terminateAndEraseFile() {
 		try {
-			if (runwait != null) {
-				runwait.stop();
-				runwait = null;
-			}
 			if (recorder != null) {
 				recorder.stop();
 				recorder.reset();
-				recorder.release();
-				recorder = null;
-				phoneNumber = null;
+				//recorder.release();			
+			}
+			if (runwait != null) {
+				runwait.stop();
 			}
 
 		} catch (Exception e) {

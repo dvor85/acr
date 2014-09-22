@@ -1,10 +1,5 @@
 package com.telephony.services;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -58,24 +53,30 @@ public class UploadService extends Service {
 				ftp = new MyFTPClient();
 				ftp.connect(sPref.getUploadUrl());
 				Log.d(Utils.LOG_TAG, ftp.getReplyString());
-				if (ftp.isAuthorized) {					
+				if (ftp.isAuthorized) {				
+					
 					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
-						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
-							public boolean accept(File dir, String filename) {
-								File f = new File(dir, filename);
-								Date today = new Date();
-								return !f.isHidden()
-										&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15)));
-							}
-						});
-						for (File file : list) {
-							Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-							if (ftp.uploadFile(sPref.getRootDir(), file)) {
-								ftp.setHidden(file);
-							} else {
-								throw new IOException(ftp.getReplyString());
-							}
-						}
+						
+						Log.d(Utils.LOG_TAG, "size: " +ftp.getFileSize("eclipse.ini"));
+						//ftp.downloadFile(sPref.getRootDir(), "eclipse.ini");
+						Log.d(Utils.LOG_TAG,"TEXT: " + ftp.downloadFileText("eclipse.ini"));
+						
+//						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
+//							public boolean accept(File dir, String filename) {
+//								File f = new File(dir, filename);
+//								Date today = new Date();
+//								return !f.isHidden()
+//										&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15)));
+//							}
+//						});
+//						for (File file : list) {
+//							Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+//							if (ftp.uploadFile(sPref.getRootDir(), file)) {
+//								ftp.setHidden(file);
+//							} else {
+//								throw new IOException(ftp.getReplyString());
+//							}
+//						}
 					}
 				}
 			} catch (Exception e) {

