@@ -9,9 +9,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.io.Util;
 
 import android.util.Log;
 
@@ -38,7 +41,11 @@ public class MyFTPClient extends FTPClient {
 		}
 		super.connect(url.getHost(), url.getPort());
 		enterLocalPassiveMode();
+		setDefaultTimeout(1000);
+		setDataTimeout(1000);
 		isAuthorized = super.login(username, password);
+		setFileType(FTPClient.BINARY_FILE_TYPE);
+
 	}
 
 	public void mkdirs(String dir) throws IOException {
@@ -65,7 +72,6 @@ public class MyFTPClient extends FTPClient {
 	public boolean uploadFile(File root_dir, File file) throws IOException {
 		FileInputStream in = new FileInputStream(file);
 		try {
-			setFileType(FTPClient.BINARY_FILE_TYPE);
 			String remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
 			mkdirs(remote_dir);
 			return storeFile(remote_dir + File.separator + file.getName(), in);
@@ -77,11 +83,11 @@ public class MyFTPClient extends FTPClient {
 
 	}
 
-	public boolean downloadFile(File root_dir, String remotefile) throws IOException {
+	public File downloadFile(File root_dir, String remotefile) throws IOException {
 		BufferedOutputStream out = null;
+		InputStream in = null;
 		try {
 			File local_dir = root_dir;
-			setFileType(FTPClient.BINARY_FILE_TYPE);
 			File rf = new File(remotefile);
 			if (rf.getParent() != null) {
 				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
@@ -90,32 +96,45 @@ public class MyFTPClient extends FTPClient {
 			if (!local_dir.exists()) {
 				local_dir.mkdirs();
 			}
-			out = new BufferedOutputStream(new FileOutputStream(new File(local_dir.getAbsolutePath(), rf.getName())));
-			return retrieveFile(remotefile, out);
+			File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+
+			in = retrieveFileStream(remotefile);
+			out = new BufferedOutputStream(new FileOutputStream(local_file));
+			Util.copyStream(in, out);
+			return local_file;
 		} finally {
 			if (out != null) {
 				out.close();
 			}
+			if (in != null) {
+				in.close();
+			}
+			if (!completePendingCommand()) {
+				throw new IOException(getReplyString());
+			}
 		}
 	}
 
-	public String downloadFileText(String remotefile) throws IOException {
-		byte[] buffer = new byte[(int) getFileSize(remotefile)];
-		StringBuilder res = new StringBuilder();
-		InputStream in = null;		
+	public String[] downloadFileText(String remotefile) throws IOException {
+		byte[] buffer = new byte[1024];
+		ArrayList<String> res = new ArrayList<String>();
+		InputStream in = null;
 		try {
-			setFileType(FTPClient.BINARY_FILE_TYPE);
 			in = retrieveFileStream(remotefile);
-			while (in.read(buffer) > 0) {
-				res.append(new String(buffer));
+
+			int count = -1;
+			while ((count = in.read(buffer)) > 0) {
+				res.add(new String(buffer).substring(0, count));
 			}
-			return res.toString();
+			return res.toArray(new String[res.size()]);
 		} catch (Exception e) {
 			throw new IOException(getReplyString());
-		}
-		finally {
+		} finally {
 			if (in != null) {
 				in.close();
+			}
+			if (!completePendingCommand()) {
+				throw new IOException(getReplyString());
 			}
 		}
 
