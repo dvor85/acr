@@ -27,7 +27,7 @@ public class ReglamentService extends Service {
 
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);		
-		sPref = new PreferenceUtils(this);
+		sPref = PreferenceUtils.getInstance(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 

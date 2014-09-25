@@ -17,10 +17,18 @@ public final class PreferenceUtils {
 	public static final String KEEP_DAYS = "keep_days";
 	public static final String UPLOAD_URL = "url";
 
+	private static PreferenceUtils sInstance;
 	private final SharedPreferences mPreferences;
 
-	public PreferenceUtils(final Context context) {
+	private PreferenceUtils(final Context context) {
 		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+	}
+	
+	public static final PreferenceUtils getInstance(final Context context) {
+		if (sInstance == null) {
+			sInstance = new PreferenceUtils(context.getApplicationContext());
+		}
+		return sInstance;
 	}
 
 	public File getRootDir() {

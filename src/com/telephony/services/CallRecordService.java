@@ -42,7 +42,7 @@ public class CallRecordService extends Service {
 		super.onCreate();
 		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
-		sPref = new PreferenceUtils(this);
+		sPref = PreferenceUtils.getInstance(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 
 	}
@@ -145,7 +145,7 @@ public class CallRecordService extends Service {
 							if (recorder != null) {
 								recorder.stop();
 								recorder.reset();
-								//recorder.release();
+								// recorder.release();
 							}
 							if (runwait != null) {
 								runwait.stop();
@@ -227,7 +227,7 @@ public class CallRecordService extends Service {
 
 					// Thread.currentThread();
 					new Proc("su").killTree(ppid);
-					//TimeUnit.SECONDS.sleep(10);
+					// TimeUnit.SECONDS.sleep(10);
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -245,7 +245,7 @@ public class CallRecordService extends Service {
 			if (recorder != null) {
 				recorder.stop();
 				recorder.reset();
-				//recorder.release();			
+				// recorder.release();
 			}
 			if (runwait != null) {
 				runwait.stop();
@@ -266,10 +266,14 @@ public class CallRecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		if (recorder != null) {
-			recorder.reset();
-			recorder.release();
-			recorder = null;
+		try {
+			if (recorder != null) {
+				recorder.reset();
+				recorder.release();
+				recorder = null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		phoneNumber = null;
 		runwait = null;

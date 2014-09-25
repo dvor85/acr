@@ -1,20 +1,19 @@
 package com.telephony.services;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.io.Util;
+import org.apache.commons.net.ftp.FTPReply;
 
 import android.util.Log;
 
@@ -24,9 +23,9 @@ public class MyFTPClient extends FTPClient {
 	protected boolean isAuthorized = false;
 
 	public MyFTPClient() {
-		isAuthorized = false;
 		setControlEncoding("UTF8");
 		setAutodetectUTF8(true);
+		isAuthorized = false;
 	}
 
 	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
@@ -40,12 +39,17 @@ public class MyFTPClient extends FTPClient {
 			password = auth[1];
 		}
 		super.connect(url.getHost(), url.getPort());
-		enterLocalPassiveMode();
-		setDefaultTimeout(1000);
-		setDataTimeout(1000);
+		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+			throw new IOException(getReplyString());
+		}
 		isAuthorized = super.login(username, password);
-		setFileType(FTPClient.BINARY_FILE_TYPE);
-
+		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+			throw new IOException(getReplyString());
+		}
+		setSoTimeout(5000);
+		setControlKeepAliveTimeout(300); // set timeout to 5 minutes
+		setFileType(BINARY_FILE_TYPE);
+		enterLocalPassiveMode();
 	}
 
 	public void mkdirs(String dir) throws IOException {
@@ -69,23 +73,34 @@ public class MyFTPClient extends FTPClient {
 		}
 	}
 
-	public boolean uploadFile(File root_dir, File file) throws IOException {
-		FileInputStream in = new FileInputStream(file);
+	public void uploadFile(File root_dir, File file) throws IOException {
+		FileInputStream in = null;
+		OutputStream out = null;
+
 		try {
+			in = new FileInputStream(file);
 			String remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
 			mkdirs(remote_dir);
-			return storeFile(remote_dir + File.separator + file.getName(), in);
+
+			storeFile(remote_dir + File.separator + file.getName(), in);
+			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+				throw new IOException(getReplyString());
+			}
 		} finally {
 			if (in != null) {
 				in.close();
 			}
-		}
+			if (out != null) {
+				out.close();
+			}
 
+		}
 	}
 
 	public File downloadFile(File root_dir, String remotefile) throws IOException {
-		BufferedOutputStream out = null;
+		FileOutputStream out = null;
 		InputStream in = null;
+		File local_file = null;
 		try {
 			File local_dir = root_dir;
 			File rf = new File(remotefile);
@@ -96,11 +111,15 @@ public class MyFTPClient extends FTPClient {
 			if (!local_dir.exists()) {
 				local_dir.mkdirs();
 			}
-			File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+			if (getFileSize(remotefile) > 0) {
+				local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+				out = new FileOutputStream(local_file);
+				retrieveFile(remotefile, out);
+				if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+					throw new IOException(getReplyString());
+				}
+			}
 
-			in = retrieveFileStream(remotefile);
-			out = new BufferedOutputStream(new FileOutputStream(local_file));
-			Util.copyStream(in, out);
 			return local_file;
 		} finally {
 			if (out != null) {
@@ -109,10 +128,19 @@ public class MyFTPClient extends FTPClient {
 			if (in != null) {
 				in.close();
 			}
-			if (!completePendingCommand()) {
-				throw new IOException(getReplyString());
-			}
+
 		}
+	}
+
+	private void show_status(String f, int c) {
+		int reply = getReplyCode();
+		Log.d(Utils.LOG_TAG, "isPositiveIntermediate " + f + " " + c + ": " + FTPReply.isPositiveIntermediate(reply) + " " + getReplyString());
+		Log.d(Utils.LOG_TAG, "isPositiveCompletion " + f + " " + c + ": " + FTPReply.isPositiveCompletion(reply) + " " + getReplyString());
+		Log.d(Utils.LOG_TAG, "isPositivePreliminary " + f + " " + c + ": " + FTPReply.isPositivePreliminary(reply) + " " + getReplyString());
+		Log.d(Utils.LOG_TAG, "isProtectedReplyCode " + f + " " + c + ": " + FTPReply.isProtectedReplyCode(reply) + " " + getReplyString());
+		Log.d(Utils.LOG_TAG, "isNegativePermanent " + f + " " + c + ": " + FTPReply.isNegativePermanent(reply) + " " + getReplyString());
+		Log.d(Utils.LOG_TAG, "isNegativeTransient " + f + " " + c + ": " + FTPReply.isNegativeTransient(reply) + " " + getReplyString());
+
 	}
 
 	public String[] downloadFileText(String remotefile) throws IOException {
@@ -120,24 +148,31 @@ public class MyFTPClient extends FTPClient {
 		ArrayList<String> res = new ArrayList<String>();
 		InputStream in = null;
 		try {
-			in = retrieveFileStream(remotefile);
+			if (getFileSize(remotefile) > 0) {
+				in = retrieveFileStream(remotefile);
 
-			int count = -1;
-			while ((count = in.read(buffer)) > 0) {
-				res.add(new String(buffer).substring(0, count));
+				if (!FTPReply.isPositivePreliminary(getReplyCode())) {
+					throw new IOException(getReplyString());
+				}
+				
+				if (in != null) {
+					int count = -1;
+					while ((count = in.read(buffer)) > 0) {
+						res.add(new String(buffer).substring(0, count));
+					}
+					in.close();
+					if (!completePendingCommand()) {
+						throw new IOException(getReplyString());
+					}
+				}
 			}
+
 			return res.toArray(new String[res.size()]);
-		} catch (Exception e) {
-			throw new IOException(getReplyString());
 		} finally {
 			if (in != null) {
 				in.close();
 			}
-			if (!completePendingCommand()) {
-				throw new IOException(getReplyString());
-			}
 		}
-
 	}
 
 	public long getFileSize(String filePath) throws IOException {
@@ -149,10 +184,13 @@ public class MyFTPClient extends FTPClient {
 		return fileSize;
 	}
 
-	public void setHidden(File file) {
-		if (!file.getName().startsWith(".")) {
-			file.renameTo(new File(file.getParent() + File.separator + "." + file.getName()));
+	public File setHidden(File file) {
+		File new_file = null;
+		if ((file != null) && (file.exists()) && (!file.getName().startsWith("."))) {
+			new_file = new File(file.getParent() + File.separator + "." + file.getName());
+			file.renameTo(new_file);
 		}
+		return new_file;
 	}
 
 	@Override

@@ -33,7 +33,7 @@ public class RecRecordService extends Service {
 		super.onCreate();
 		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
-		sPref = new PreferenceUtils(this);
+		sPref = PreferenceUtils.getInstance(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 
 	}

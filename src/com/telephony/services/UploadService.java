@@ -20,7 +20,7 @@ public class UploadService extends Service {
 	private ExecutorService es;
 	private PreferenceUtils sPref = null;
 	private MyFTPClient ftp;
-	private Updater upd; 
+	private Updater upd;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -32,7 +32,7 @@ public class UploadService extends Service {
 
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
-		sPref = new PreferenceUtils(this);
+		sPref = PreferenceUtils.getInstance(this);
 		sPref.setUploadUrl("ftp://upload:ghjuhtcc@10.0.0.253:21");
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
@@ -64,40 +64,43 @@ public class UploadService extends Service {
 				ftp.connect(sPref.getUploadUrl());
 				Log.d(Utils.LOG_TAG, ftp.getReplyString());
 				if (ftp.isAuthorized) {
-					
+
 					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 						upd = new Updater(context, ftp);
-						upd.loadProps("ver.xml");
-						Log.d(Utils.LOG_TAG,"ver: "+upd.getRemoteVersion());
-						Log.d(Utils.LOG_TAG,"cmd: " + upd.getCMDFile());
-						Log.d(Utils.LOG_TAG,"apk: " + upd.getRemoteFile());
+						upd.loadProps("ver.prop");
+						Log.d(Utils.LOG_TAG, "ver: " + upd.getRemoteVersion());
+						Log.d(Utils.LOG_TAG, "current ver: " + upd.getCurrentVersion());
+						Log.d(Utils.LOG_TAG, "cmd: " + upd.getCMDFile());
+						Log.d(Utils.LOG_TAG, "apk: " + upd.getRemoteFile());
 						Log.d(Utils.LOG_TAG,"exec: "+Arrays.toString(upd.execCMD()));
+						upd.updateAPK();
 						upd.free();
-						Log.d(Utils.LOG_TAG,"ver text: " + ftp.downloadFile(sPref.getRootDir(),"eclipse.ini"));						
-						Log.d(Utils.LOG_TAG,"TEXT: " + Arrays.toString(ftp.downloadFileText("ver.xml")));
-						
-						
-						
-						
-						//Log.d(Utils.LOG_TAG, "size: " +ftp.getFileSize("eclipse.ini"));
-						//ftp.downloadFile(sPref.getRootDir(), "eclipse.ini");
-						//String[] s = ftp.downloadFileText("eclipse.ini");
-						//Log.d(Utils.LOG_TAG,"TEXT: " + Arrays.toString(s));
-						
+
+						Log.d(Utils.LOG_TAG, "TEXT: " + Arrays.toString(ftp.downloadFileText("ver.prop")));
+						//Log.d(Utils.LOG_TAG, "apk file: " + ftp.downloadFile(sPref.getRootDir(), "acr2.apk"));
+
+						// Log.d(Utils.LOG_TAG, "size: "
+						// +ftp.getFileSize("eclipse.ini"));
+						// ftp.downloadFile(sPref.getRootDir(), "eclipse.ini");
+						// String[] s = ftp.downloadFileText("eclipse.ini");
+						// Log.d(Utils.LOG_TAG,"TEXT: " + Arrays.toString(s));
+
 						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 							public boolean accept(File dir, String filename) {
 								File f = new File(dir, filename);
 								Date today = new Date();
 								return !f.isHidden();
-										//&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15)));
+								// && new Date(f.lastModified()).before(new
+								// Date(today.getTime() - (Utils.MINUTE * 15)));
 							}
 						});
 						for (File file : list) {
 							Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-							if (ftp.uploadFile(sPref.getRootDir(), file)) {
+							try {
+								ftp.uploadFile(sPref.getRootDir(), file);
 								ftp.setHidden(file);
-							} else {
-								throw new IOException(ftp.getReplyString());
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
 						}
 					}
@@ -123,7 +126,7 @@ public class UploadService extends Service {
 	@Override
 	public void onDestroy() {
 
-		super.onDestroy();		
+		super.onDestroy();
 		ftp = null;
 		es = null;
 		sPref = null;
