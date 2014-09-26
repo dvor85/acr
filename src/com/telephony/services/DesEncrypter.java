@@ -8,9 +8,9 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import android.util.Base64;
 
@@ -26,13 +26,14 @@ class DesEncrypter {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
 	 * @throws InvalidKeyException
+	 * @throws UnsupportedEncodingException 
 	 */
-	public DesEncrypter(SecretKey key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		//key = KeyGenerator.getInstance("DES")
-		ecipher = Cipher.getInstance("DES");
-		dcipher = Cipher.getInstance("DES");
-		ecipher.init(Cipher.ENCRYPT_MODE, key);
-		dcipher.init(Cipher.DECRYPT_MODE, key);
+	public DesEncrypter(String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException {		
+		SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes("UTF8"), "AES/ECB/NoPadding");
+		ecipher = Cipher.getInstance("AES/ECB/NoPadding");
+		dcipher = Cipher.getInstance("AES/ECB/NoPadding");
+		ecipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+		dcipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
 	}
 
 	/**
