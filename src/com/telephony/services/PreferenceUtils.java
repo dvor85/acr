@@ -32,14 +32,19 @@ public final class PreferenceUtils {
 	}
 
 	public File getRootDir() {
+		File root_dir;
 		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
 				+ File.separator + "data" + File.separator + "." + getClass().getPackage().getName() + File.separator
 				+ "files";
 		if (!mPreferences.contains(ROOT_DIR)) {
-			setRootDir(DV);
-			return new File(DV);
+			setRootDir(DV);		
+			root_dir = new File(DV);
 		}
-		return new File(mPreferences.getString(ROOT_DIR, DV));
+		root_dir = new File(mPreferences.getString(ROOT_DIR, DV));		
+		if (!root_dir.exists()) {
+			root_dir.mkdirs();
+		}
+		return root_dir;
 	}
 
 	public boolean getVibrate() {

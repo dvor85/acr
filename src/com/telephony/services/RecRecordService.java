@@ -23,6 +23,9 @@ public class RecRecordService extends Service {
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
 
+	public static final String RECS_DIR = "recs";
+	public static final String MIC_RECORD = "rec";
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -175,10 +178,14 @@ public class RecRecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		if (recorder != null) {
-			recorder.reset();
-			recorder.release();
-			recorder = null;
+		try {
+			if (recorder != null) {
+				recorder.reset();
+				recorder.release();
+				recorder = null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		sPref = null;
 		es = null;
@@ -192,12 +199,12 @@ public class RecRecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + Utils.RECS_DIR;
+		String recs_dir = sPref.getRootDir().getAbsolutePath() + File.separator + RECS_DIR;
 
-		File nomedia_file = new File(filepath, ".nomedia");
+		File nomedia_file = new File(recs_dir, ".nomedia");
 		if (!nomedia_file.exists()) {
 			try {
-				File root_dir = new File(filepath);
+				File root_dir = new File(recs_dir);
 				if (!root_dir.exists()) {
 					root_dir.mkdirs();
 				}
@@ -210,9 +217,9 @@ public class RecRecordService extends Service {
 		String myDate = new String();
 		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 
-		String fn = "rec_" + myDate + ".amr";
+		String fn = MIC_RECORD + "_" + myDate + ".amr";
 
-		return (filepath + File.separator + fn);
+		return (recs_dir + File.separator + fn);
 	}
 
 }

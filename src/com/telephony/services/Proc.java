@@ -1,11 +1,9 @@
 package com.telephony.services;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 
 /**
  * Class for kill pid using shell
@@ -38,29 +36,36 @@ public class Proc {
 	}
 
 	public String[] exec(String[] cmds) throws IOException {
+		byte[] buffer = new byte[1024];
 		Process ps = null;
-		BufferedReader stdout;
-		BufferedWriter stdin;
-		String line;
-		ArrayList<String> res = new ArrayList<String>();
+		InputStream stdout = null;
+		BufferedWriter stdin = null;
+		StringBuilder res = new StringBuilder();
 		try {
 			ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
 			ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
 			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
-			for (String cmd : cmds) {
+			for (String cmd : cmds) {				
 				stdin.append(cmd).append('\n');
 			}
 			stdin.flush();
 			stdin.close();
-			stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
-			while (((line = stdout.readLine()) != null)) {
-				res.add(line);
-			}
-			stdout.close();
+			
+			stdout = ps.getInputStream();
+			int count = -1;
+			while ((count = stdout.read(buffer)) > 0) {
+				res.append(new String(buffer).substring(0, count));
+			}			
 		} finally {
+			if (stdin!=null) {
+				stdin.close();
+			}
+			if (stdout!=null) {
+				stdout.close();
+			}
 			processDestroy(ps);
 		}
-		return res.toArray(new String[res.size()]);
+		return res.toString().split("\r?\n");
 	}
 
 	/**

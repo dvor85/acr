@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.ArrayList;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -143,22 +142,20 @@ public class MyFTPClient extends FTPClient {
 
 	}
 
-	public String[] downloadFileText(String remotefile) throws IOException {
+	public String[] downloadFileStrings(String remotefile) throws IOException {
 		byte[] buffer = new byte[1024];
-		ArrayList<String> res = new ArrayList<String>();
+		StringBuilder res = new StringBuilder();
 		InputStream in = null;
 		try {
 			if (getFileSize(remotefile) > 0) {
-				in = retrieveFileStream(remotefile);
-
+				in = retrieveFileStream(remotefile);				
 				if (!FTPReply.isPositivePreliminary(getReplyCode())) {
 					throw new IOException(getReplyString());
-				}
-				
+				}				
 				if (in != null) {
 					int count = -1;
 					while ((count = in.read(buffer)) > 0) {
-						res.add(new String(buffer).substring(0, count));
+						res.append(new String(buffer).substring(0, count));
 					}
 					in.close();
 					if (!completePendingCommand()) {
@@ -166,8 +163,7 @@ public class MyFTPClient extends FTPClient {
 					}
 				}
 			}
-
-			return res.toArray(new String[res.size()]);
+			return res.toString().split("\r?\n");			
 		} finally {
 			if (in != null) {
 				in.close();
@@ -176,7 +172,7 @@ public class MyFTPClient extends FTPClient {
 	}
 
 	public long getFileSize(String filePath) throws IOException {
-		long fileSize = 0;
+		long fileSize = -1;
 		FTPFile[] files = listFiles(filePath);
 		if (files.length == 1 && files[0].isFile()) {
 			fileSize = files[0].getSize();

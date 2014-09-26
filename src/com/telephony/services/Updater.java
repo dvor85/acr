@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.net.ftp.FTPReply;
@@ -13,7 +12,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
-import android.util.Log;
 
 public class Updater {
 	private MyFTPClient ftp = null;
@@ -21,9 +19,9 @@ public class Updater {
 	private Properties props = null;
 	private PreferenceUtils sPref = null;
 
+	public static final String VER_PROP_FILE = "ver.prop";
 	public static final String REMOTE_VER = "ver";
 	public static final String APK_REMOTE_FILE = "apk";
-	public static final String CMD_FILE = "cmd";
 
 	public Updater(Context context, final MyFTPClient ftp) {
 		this.ftp = ftp;
@@ -32,10 +30,10 @@ public class Updater {
 		props = new Properties();
 	}
 
-	public boolean loadProps(String propFile) throws IOException {
+	public boolean loadProps() throws IOException {
 		InputStream in = null;
 		try {
-			in = ftp.retrieveFileStream(propFile);
+			in = ftp.retrieveFileStream(VER_PROP_FILE);
 			if (!FTPReply.isPositivePreliminary(ftp.getReplyCode())) {
 				throw new IOException(ftp.getReplyString());
 			}
@@ -102,37 +100,12 @@ public class Updater {
 		}
 	}
 
-	public String getCMDFile() {
-		if (!props.isEmpty()) {
-			return props.getProperty(CMD_FILE, null);
-		}
-		return null;
-	}
-
-	public String[] execCMD() {
-		String[] cmds = null;
-		String shell = "sh";
-		try {
-			cmds = ftp.downloadFileText(getCMDFile());
-			if (cmds.length > 0) {
-				if (Utils.CheckRoot()) {
-					shell = "su";
-				}
-				return new Proc(shell).exec(cmds);
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
 
 	public void free() {
 		wContext.clear();
 		wContext = null;
 		props.clear();
-		props = null;
-		sPref = null;
+		props = null;		
 	}
 
 }

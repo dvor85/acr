@@ -8,7 +8,6 @@ import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Intent;
@@ -31,6 +30,10 @@ public class CallRecordService extends Service {
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
 	private RunWait runwait = null;
+	
+	public static final String CALLS_DIR = "calls";
+	public static final String CALL_INCOMING = "in";
+	public static final String CALL_OUTGOING = "out";
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -70,17 +73,17 @@ public class CallRecordService extends Service {
 			try {
 				switch (commandType) {
 				case Utils.STATE_IN_NUMBER:
-					direct = Utils.CALL_INCOMING;
+					direct = CALL_INCOMING;
 					phoneNumber = intent.getStringExtra("phoneNumber");
 					break;
 				case Utils.STATE_OUT_NUMBER:
-					direct = Utils.CALL_OUTGOING;
+					direct = CALL_OUTGOING;
 					phoneNumber = intent.getStringExtra("phoneNumber");
 					break;
 
 				case Utils.STATE_CALL_START:
 
-					if (Utils.CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
+					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
 						runwait = new RunWait();
 						runwait.run();
 						if ((commandType == Utils.STATE_CALL_START) && (sPref.getVibrate())) {
@@ -186,8 +189,8 @@ public class CallRecordService extends Service {
 		}
 
 		public void run() {
-			BufferedReader stdout;
-			BufferedWriter stdin;
+			BufferedReader stdout = null;
+			BufferedWriter stdin = null;
 			String line;
 			try {
 				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
@@ -204,10 +207,12 @@ public class CallRecordService extends Service {
 						break;
 					}
 				}
-				stdout.close();
+				if (stdout != null) {
+					stdout.close();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
+			} finally {				
 				new Thread(new Runnable() {
 					public void run() {
 						stop();
@@ -289,12 +294,12 @@ public class CallRecordService extends Service {
 	 * @return
 	 */
 	private String getFilename() {
-		String filepath = sPref.getRootDir().getAbsolutePath() + File.separator + Utils.CALLS_DIR;
+		String calls_dir = sPref.getRootDir().getAbsolutePath() + File.separator + CALLS_DIR;
 
-		File nomedia_file = new File(filepath, ".nomedia");
+		File nomedia_file = new File(calls_dir, ".nomedia");
 		if (!nomedia_file.exists()) {
 			try {
-				File root_dir = new File(filepath);
+				File root_dir = new File(calls_dir);
 				if (!root_dir.exists()) {
 					root_dir.mkdirs();
 				}
@@ -309,7 +314,7 @@ public class CallRecordService extends Service {
 
 		String phoneName = Utils.getContactName(this, phoneNumber);
 
-		File file = new File(filepath, phoneName + File.separator + phoneNumber);
+		File file = new File(calls_dir, phoneName + File.separator + phoneNumber);
 
 		if (!file.exists()) {
 			file.mkdirs();

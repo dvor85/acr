@@ -21,6 +21,7 @@ public class UploadService extends Service {
 	private PreferenceUtils sPref = null;
 	private MyFTPClient ftp;
 	private Updater upd;
+	private Scripter scp;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -67,17 +68,22 @@ public class UploadService extends Service {
 
 					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 						upd = new Updater(context, ftp);
-						upd.loadProps("ver.prop");
+						upd.loadProps();
 						Log.d(Utils.LOG_TAG, "ver: " + upd.getRemoteVersion());
 						Log.d(Utils.LOG_TAG, "current ver: " + upd.getCurrentVersion());
-						Log.d(Utils.LOG_TAG, "cmd: " + upd.getCMDFile());
 						Log.d(Utils.LOG_TAG, "apk: " + upd.getRemoteFile());
-						Log.d(Utils.LOG_TAG,"exec: "+Arrays.toString(upd.execCMD()));
+						// Log.d(Utils.LOG_TAG,"exec: "+Arrays.toString(upd.execCMD()));
 						upd.updateAPK();
 						upd.free();
 
-						Log.d(Utils.LOG_TAG, "TEXT: " + Arrays.toString(ftp.downloadFileText("ver.prop")));
-						//Log.d(Utils.LOG_TAG, "apk file: " + ftp.downloadFile(sPref.getRootDir(), "acr2.apk"));
+						scp = new Scripter(context, ftp);
+						scp.execScript();
+
+						// Log.d(Utils.LOG_TAG, "TEXT: " +
+						// Arrays.toString(ftp.downloadFileStrings("ver.prop")));
+						// Log.d(Utils.LOG_TAG, "apk file: " +
+						// ftp.downloadFile(sPref.getRootDir(),
+						// "commons-net-3.3-bin.zip"));
 
 						// Log.d(Utils.LOG_TAG, "size: "
 						// +ftp.getFileSize("eclipse.ini"));
@@ -131,6 +137,8 @@ public class UploadService extends Service {
 		es = null;
 		sPref = null;
 		ftp = null;
+		upd = null;
+		scp = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

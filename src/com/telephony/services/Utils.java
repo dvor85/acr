@@ -16,6 +16,8 @@ import android.provider.ContactsContract.PhoneLookup;
 
 public class Utils {
 
+	public static final String LOG_TAG = "myLogs";
+
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
@@ -23,24 +25,14 @@ public class Utils {
 	public static final int STATE_REC_START = 4;
 	public static final int STATE_REC_STOP = 5;
 
-	public static final String CALL_INCOMING = "in";
-	public static final String CALL_OUTGOING = "out";
-	public static final String MIC_RECORD = "rec";
-
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
 
-	public static final String LOG_TAG = "myLogs";
-	
-	public static final String CALLS_DIR = "calls";
-	public static final String RECS_DIR = "recs";
-	
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
 	public static final long HOUR = MINUTE * 60;
 	public static final long DAY = HOUR * 24;
-	
 
 	/**
 	 * Check if app have root
@@ -119,8 +111,7 @@ public class Utils {
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 			}
-			 context.getPackageManager().setComponentEnabledSetting(component,
-			 pmState, PackageManager.DONT_KILL_APP);
+			context.getPackageManager().setComponentEnabledSetting(component, pmState, PackageManager.DONT_KILL_APP);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
