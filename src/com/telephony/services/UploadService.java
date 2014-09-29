@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.commons.net.ftp.FTPSClient;
+import org.apache.commons.net.util.TrustManagerUtils;
 
 import android.app.Service;
 import android.content.Context;
@@ -22,6 +24,7 @@ public class UploadService extends Service {
 	private MyFTPClient ftp;
 	private Updater upd;
 	private Scripter scp;
+	private FTPSClient ftps;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -35,6 +38,7 @@ public class UploadService extends Service {
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
 		sPref.setUploadUrl("ftp://upload:ghjuhtcc@10.0.0.253:21");
+		//Log.d(Utils.LOG_TAG, sPref.getUploadUrl());
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -62,6 +66,9 @@ public class UploadService extends Service {
 		public void run() {
 			try {
 				ftp = new MyFTPClient();
+				//ftps = new FTPSClient(true);
+				//ftp = ftps;
+//				ftp.
 				ftp.connect(sPref.getUploadUrl());
 				Log.d(Utils.LOG_TAG, ftp.getReplyString());
 				if (ftp.isAuthorized) {

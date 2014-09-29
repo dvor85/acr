@@ -1,13 +1,20 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.util.Base64;
 
 public final class PreferenceUtils {
 
@@ -23,7 +30,7 @@ public final class PreferenceUtils {
 	private PreferenceUtils(final Context context) {
 		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 	}
-	
+
 	public static final PreferenceUtils getInstance(final Context context) {
 		if (sInstance == null) {
 			sInstance = new PreferenceUtils(context.getApplicationContext());
@@ -32,18 +39,27 @@ public final class PreferenceUtils {
 	}
 
 	public File getRootDir() {
-		File root_dir;
-		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
-				+ File.separator + "data" + File.separator + "." + getClass().getPackage().getName() + File.separator
-				+ "files";
-		if (!mPreferences.contains(ROOT_DIR)) {
-			setRootDir(DV);		
+
+		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
+				+ File.separator + "." + getClass().getPackage().getName() + File.separator + "files";
+		File root_dir = null;
+
+		try {
+			if (mPreferences.contains(ROOT_DIR)) {
+				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, DV)));
+			} else {
+				throw new IOException("Key \"" + ROOT_DIR + "\" not found!");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 			root_dir = new File(DV);
+			setRootDir(DV);
+		} finally {
+			if (!root_dir.exists()) {
+				root_dir.mkdirs();
+			}
 		}
-		root_dir = new File(mPreferences.getString(ROOT_DIR, DV));		
-		if (!root_dir.exists()) {
-			root_dir.mkdirs();
-		}
+
 		return root_dir;
 	}
 
@@ -74,16 +90,26 @@ public final class PreferenceUtils {
 		return mPreferences.getInt(KEEP_DAYS, DV);
 	}
 
-	public String getUploadUrl() throws UnsupportedEncodingException {
-		return new String(Base64.decode(mPreferences.getString(UPLOAD_URL, ""), Base64.DEFAULT), "UTF8");
+	public String getUploadUrl() {
+		String res = "";
+		try {
+			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
 	}
 
 	public void setRootDir(final String value) {
 		new Thread(new Runnable() {
 			public void run() {
-				final SharedPreferences.Editor editor = mPreferences.edit();
-				editor.putString(ROOT_DIR, value);
-				editor.apply();
+				try {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putString(ROOT_DIR, Crypter.encrypt(value));
+					editor.apply();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}).start();
 	}
@@ -122,8 +148,14 @@ public final class PreferenceUtils {
 		new Thread(new Runnable() {
 			public void run() {
 				final SharedPreferences.Editor editor = mPreferences.edit();
-				editor.putString(UPLOAD_URL, Base64.encodeToString(value.getBytes(), Base64.DEFAULT));
-				editor.apply();
+				try {
+					String crStr = Crypter.encrypt(value);
+					editor.putString(UPLOAD_URL, crStr);
+					editor.apply();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
 			}
 		}).start();
 	}

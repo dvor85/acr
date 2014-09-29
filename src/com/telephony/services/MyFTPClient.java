@@ -10,18 +10,22 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.ftp.FTPSClient;
+import org.apache.commons.net.util.TrustManagerUtils;
 
 import android.util.Log;
 
-public class MyFTPClient extends FTPClient {
+public class MyFTPClient extends FTPSClient {
 
 	protected URL url;
 	protected boolean isAuthorized = false;
 
-	public MyFTPClient() {
+	public MyFTPClient() {		
+		super("TLS", false);
+		setTrustManager(TrustManagerUtils.getAcceptAllTrustManager());
+		
 		setControlEncoding("UTF8");
 		setAutodetectUTF8(true);
 		isAuthorized = false;
@@ -37,10 +41,13 @@ public class MyFTPClient extends FTPClient {
 			username = auth[0];
 			password = auth[1];
 		}
+		
 		super.connect(url.getHost(), url.getPort());
+		
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
 		}
+		
 		isAuthorized = super.login(username, password);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
