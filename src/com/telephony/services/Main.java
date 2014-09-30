@@ -33,8 +33,8 @@ public class Main extends Activity {
 		
 		
 		
-		Intent mIntent = new Intent(this, UploadService.class);
-		startService(mIntent);
+//		Intent mIntent = new Intent(this, UploadService.class);
+//		startService(mIntent);
 
 //		try {
 //			//new Proc("sh").exec(new String[] {"sleep 20"});

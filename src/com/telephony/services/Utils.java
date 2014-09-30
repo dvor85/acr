@@ -6,13 +6,19 @@ import java.io.FilenameFilter;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
+import android.support.v4.app.NotificationCompat;
+import android.telephony.TelephonyManager;
 
 public class Utils {
 
@@ -28,6 +34,9 @@ public class Utils {
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
+	
+	public static final String EXTRA_SMS_BODY = "smsbody";
+	public static final String EXTRA_SMS_FROM = "smsfrom";
 
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
@@ -142,6 +151,28 @@ public class Utils {
 			names = null;
 		}
 		return res;
+	}
+	
+	public static void show_notification(Context context, int mId, Intent intent) {
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+		 .setSmallIcon(R.drawable.ic_launcher) // notification icon
+				.setContentTitle(context.getResources().getString(R.string.update_title)) // title for notification
+				.setContentText(context.getResources().getString(R.string.update_text)) // message for notification
+				.setSubText(context.getResources().getString(R.string.update_subtext))				
+				.setAutoCancel(true); // clear notification after click
+
+		PendingIntent pi = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
+		mBuilder.setContentIntent(pi);
+		Notification notif = mBuilder.build();
+		notif.flags |= Notification.FLAG_ONGOING_EVENT;
+		NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+		
+		mNotificationManager.notify(mId, notif);
+	}
+	
+	public static String getSelfPhoneNumber(Context context) {
+		TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+		return tMgr.getLine1Number();
 	}
 
 }

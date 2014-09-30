@@ -8,10 +8,14 @@ import java.util.Properties;
 
 import org.apache.commons.net.ftp.FTPReply;
 
+import android.annotation.SuppressLint;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
 
 public class Updater {
 	private MyFTPClient ftp = null;
@@ -91,7 +95,7 @@ public class Updater {
 					intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");
 					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					if (wContext != null) {
-						wContext.get().startActivity(intent);
+						Utils.show_notification(wContext.get(), 0, intent);
 					}
 				}
 			}
@@ -100,12 +104,11 @@ public class Updater {
 		}
 	}
 
-
 	public void free() {
 		wContext.clear();
 		wContext = null;
 		props.clear();
-		props = null;		
+		props = null;
 	}
 
 }

@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
@@ -33,20 +34,22 @@ public class ReglamentService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		es.execute(new RunService(intent, flags, startId));
+		es.execute(new RunService(intent, flags, startId, this));
 		return super.onStartCommand(intent, flags, startId);
 
 	}
 
 	private class RunService implements Runnable {
-		final Intent intent;
-		final int flags;
-		final int startId;		
+		private final Intent intent;
+		private final int flags;
+		private final int startId;
+		private final Context context;		
 
-		public RunService(Intent intent, int flags, int startId) {
+		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
 			this.flags = flags;
 			this.startId = startId;
+			this.context = context;
 		}
 
 		public void run() {

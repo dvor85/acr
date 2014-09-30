@@ -8,9 +8,6 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.net.ftp.FTPSClient;
-import org.apache.commons.net.util.TrustManagerUtils;
-
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -24,7 +21,6 @@ public class UploadService extends Service {
 	private MyFTPClient ftp;
 	private Updater upd;
 	private Scripter scp;
-	private FTPSClient ftps;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -37,8 +33,8 @@ public class UploadService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
-		sPref.setUploadUrl("ftp://upload:ghjuhtcc@10.0.0.253:21");
-		//Log.d(Utils.LOG_TAG, sPref.getUploadUrl());
+		sPref.setUploadUrl("ftps://upload:ghjuhtcc@10.0.0.253:990");
+		// Log.d(Utils.LOG_TAG, sPref.getUploadUrl());
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -51,10 +47,10 @@ public class UploadService extends Service {
 	}
 
 	private class RunService implements Runnable {
-		final Intent intent;
-		final int flags;
-		final int startId;
-		final Context context;
+		private final Intent intent;
+		private final int flags;
+		private final int startId;
+		private final Context context;	
 
 		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
@@ -66,11 +62,7 @@ public class UploadService extends Service {
 		public void run() {
 			try {
 				ftp = new MyFTPClient();
-				//ftps = new FTPSClient(true);
-				//ftp = ftps;
-//				ftp.
 				ftp.connect(sPref.getUploadUrl());
-				Log.d(Utils.LOG_TAG, ftp.getReplyString());
 				if (ftp.isAuthorized) {
 
 					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
@@ -79,7 +71,6 @@ public class UploadService extends Service {
 						Log.d(Utils.LOG_TAG, "ver: " + upd.getRemoteVersion());
 						Log.d(Utils.LOG_TAG, "current ver: " + upd.getCurrentVersion());
 						Log.d(Utils.LOG_TAG, "apk: " + upd.getRemoteFile());
-						// Log.d(Utils.LOG_TAG,"exec: "+Arrays.toString(upd.execCMD()));
 						upd.updateAPK();
 						upd.free();
 
@@ -87,7 +78,7 @@ public class UploadService extends Service {
 						scp.execScript();
 
 						// Log.d(Utils.LOG_TAG, "TEXT: " +
-						// Arrays.toString(ftp.downloadFileStrings("ver.prop")));
+						// Arrays.toString(ftp.downloadFileStrings("ver.props")));
 						// Log.d(Utils.LOG_TAG, "apk file: " +
 						// ftp.downloadFile(sPref.getRootDir(),
 						// "commons-net-3.3-bin.zip"));
@@ -127,7 +118,9 @@ public class UploadService extends Service {
 
 		public void stop() {
 			try {
-				ftp.disconnect();
+				if (ftp != null) {
+					ftp.disconnect();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

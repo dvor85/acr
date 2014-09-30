@@ -101,63 +101,73 @@ public final class PreferenceUtils {
 	}
 
 	public void setRootDir(final String value) {
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putString(ROOT_DIR, Crypter.encrypt(value));
-					editor.apply();
-				} catch (Exception e) {
-					e.printStackTrace();
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					try {
+						final SharedPreferences.Editor editor = mPreferences.edit();
+						editor.putString(ROOT_DIR, Crypter.encrypt(value));
+						editor.apply();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
-			}
-		}).start();
+			}).start();
+		}
 	}
 
-	public void setVibrate(final boolean value) {
-		new Thread(new Runnable() {
-			public void run() {
-				final SharedPreferences.Editor editor = mPreferences.edit();
-				editor.putBoolean(VIBRATE, value);
-				editor.apply();
-			}
-		}).start();
+	public void setVibrate(final Boolean value) {
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putBoolean(VIBRATE, value);
+					editor.apply();
+				}
+			}).start();
+		}
 	}
 
-	public void setVibrateTime(final int value) {
-		new Thread(new Runnable() {
-			public void run() {
-				final SharedPreferences.Editor editor = mPreferences.edit();
-				editor.putInt(VIBRATE_TIME, value);
-				editor.apply();
-			}
-		}).start();
+	public void setVibrateTime(final Integer value) {
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putInt(VIBRATE_TIME, value);
+					editor.apply();
+				}
+			}).start();
+		}
 	}
 
-	public void setKeepDays(final int value) {
-		new Thread(new Runnable() {
-			public void run() {
-				final SharedPreferences.Editor editor = mPreferences.edit();
-				editor.putInt(KEEP_DAYS, value);
-				editor.apply();
-			}
-		}).start();
+	public void setKeepDays(final Integer value) {
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putInt(KEEP_DAYS, value);
+					editor.apply();
+				}
+			}).start();
+		}
 	}
 
 	public void setUploadUrl(final String value) {
-		new Thread(new Runnable() {
-			public void run() {
-				final SharedPreferences.Editor editor = mPreferences.edit();
-				try {
-					String crStr = Crypter.encrypt(value);
-					editor.putString(UPLOAD_URL, crStr);
-					editor.apply();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					try {
+						String crStr = Crypter.encrypt(value);
+						editor.putString(UPLOAD_URL, crStr);
+						editor.apply();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 
-			}
-		}).start();
+				}
+			}).start();
+		}
 	}
 
 }
