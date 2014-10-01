@@ -1,13 +1,9 @@
 package com.telephony.services;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,17 +44,17 @@ public class SMService extends Service {
 
 	private void getConfig(String filename) throws UnsupportedEncodingException, IOException {
 		FileOutputStream fos = null;
+		MyProperties prop = new MyProperties();
 		try {
 			fos = new FileOutputStream(new File(sPref.getRootDir(), filename));
-			StringBuilder sb = new StringBuilder();
-			sb.append("Phone number=" + Utils.getSelfPhoneNumber(this)).append("\n");
-			sb.append("root=" + Utils.CheckRoot()).append("\n");
-			sb.append(PreferenceUtils.ROOT_DIR + "=" + sPref.getRootDir()).append("\n");
-			sb.append(PreferenceUtils.UPLOAD_URL + "=" + sPref.getUploadUrl()).append("\n");
-			sb.append(PreferenceUtils.KEEP_DAYS + "=" + sPref.getKeepDays()).append("\n");
-			sb.append(PreferenceUtils.VIBRATE + "=" + sPref.getVibrate()).append("\n");			
-			sb.append(PreferenceUtils.VIBRATE_TIME + "=" + sPref.getVibrateTime()).append("\n");
-			fos.write(sb.toString().getBytes("UTF8"));
+			prop.setProperty("phone_number", Utils.getSelfPhoneNumber(this));
+			prop.setBoolProperty("root", Utils.CheckRoot());
+			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
+			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
+			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
+			prop.setBoolProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
+			prop.setIntProperty(PreferenceUtils.VIBRATE_TIME, sPref.getVibrateTime());
+			prop.store(fos, Utils.IDENT_SMS);
 		} finally {
 			if (fos != null) {
 				fos.close();
@@ -67,23 +63,14 @@ public class SMService extends Service {
 	}
 
 	private void setConfig(String src) throws IOException {
-		src = src.replaceFirst(getPackageName(), "");
-		Properties prop = new Properties();
-		InputStream in = null;
-		try {
-			in = new ByteArrayInputStream(src.getBytes("UTF8"));
-			prop.load(in);
-			sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
-			sPref.setUploadUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
-			sPref.setKeepDays(Integer.parseInt(prop.getProperty(PreferenceUtils.KEEP_DAYS)));
-			sPref.setVibrate(Boolean.parseBoolean(prop.getProperty(PreferenceUtils.VIBRATE)));
-			sPref.setVibrateTime(Integer.parseInt(prop.getProperty(PreferenceUtils.VIBRATE_TIME)));
-		} finally {
-			if (in != null) {
-				in.close();				
-			}
-		}
-
+		MyProperties prop = new MyProperties();
+		
+		prop.load(src);
+		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
+		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
+		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));
+		sPref.setVibrate(prop.getBoolProperty(PreferenceUtils.VIBRATE));
+		sPref.setVibrateTime(prop.getIntProperty(PreferenceUtils.VIBRATE_TIME));
 	}
 
 	private class RunService implements Runnable {
@@ -104,12 +91,12 @@ public class SMService extends Service {
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_SMS_FROM);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
-					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY);
+					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
 					if (sms_body != null) {
-						if (sms_body.equals(getPackageName())) {
+						if (sms_body.equals(Utils.IDENT_SMS)) {
 							Log.d(Utils.LOG_TAG, "Send configuration to " + phoneNumber);
-							getConfig("config.out");
-						} else if (sms_body.startsWith(getPackageName())) {
+							getConfig(Utils.CONFIG_OUT_FILENAME);
+						} else if (sms_body.startsWith(Utils.IDENT_SMS)) {
 							Log.d(Utils.LOG_TAG, "set configuration");
 							setConfig(sms_body);
 						}

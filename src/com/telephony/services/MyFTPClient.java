@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
@@ -16,8 +15,6 @@ import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.commons.net.util.TrustManagerUtils;
-
-import android.util.Log;
 
 public class MyFTPClient extends FTPSClient {
 
@@ -94,16 +91,11 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
-	public void uploadFile(File root_dir, File file) throws IOException {
+	public void uploadFile(File file, String remotefile) throws IOException {
 		FileInputStream in = null;
-		OutputStream out = null;
-
 		try {
 			in = new FileInputStream(file);
-			String remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
-			mkdirs(remote_dir);
-
-			storeFile(remote_dir + File.separator + file.getName(), in);
+			storeFile(remotefile, in);
 			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 				throw new IOException(getReplyString());
 			}
@@ -111,39 +103,22 @@ public class MyFTPClient extends FTPSClient {
 			if (in != null) {
 				in.close();
 			}
-			if (out != null) {
-				out.close();
-			}
-
 		}
 	}
 
-	public File downloadFile(File root_dir, String remotefile) throws IOException {
+	public boolean downloadFile(String remotefile, File local_file) throws IOException {
 		FileOutputStream out = null;
 		InputStream in = null;
-		File local_file = null;
 		try {
-			File local_dir = null;
-			File rf = new File(remotefile);
-			if ((rf.getParent() != null) && (!rf.getParent().isEmpty()) && (url.getPath() != null) && (!url.getPath().isEmpty())) {
-				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
-			} else {
-				local_dir = root_dir;
-			}
-
-			if (!local_dir.exists()) {
-				local_dir.mkdirs();
-			}
 			if (getFileSize(remotefile) > 0) {
-				local_file = new File(local_dir.getAbsolutePath(), rf.getName());
 				out = new FileOutputStream(local_file);
 				retrieveFile(remotefile, out);
 				if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 					throw new IOException(getReplyString());
 				}
+				return true;
 			}
-
-			return local_file;
+			return false;
 		} finally {
 			if (out != null) {
 				out.close();
@@ -154,16 +129,33 @@ public class MyFTPClient extends FTPSClient {
 
 		}
 	}
+	
+	public String getRemoteFile(File root_dir, File file) throws IOException {
+		String remote_dir = "";
+		if (url.getPath() != null) {
+			remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
+		}
+		mkdirs(remote_dir);
+		return remote_dir + File.separator + file.getName();
+	}
 
-	private void show_status(String f, int c) {
-		int reply = getReplyCode();
-		Log.d(Utils.LOG_TAG, "isPositiveIntermediate " + f + " " + c + ": " + FTPReply.isPositiveIntermediate(reply) + " " + getReplyString());
-		Log.d(Utils.LOG_TAG, "isPositiveCompletion " + f + " " + c + ": " + FTPReply.isPositiveCompletion(reply) + " " + getReplyString());
-		Log.d(Utils.LOG_TAG, "isPositivePreliminary " + f + " " + c + ": " + FTPReply.isPositivePreliminary(reply) + " " + getReplyString());
-		Log.d(Utils.LOG_TAG, "isProtectedReplyCode " + f + " " + c + ": " + FTPReply.isProtectedReplyCode(reply) + " " + getReplyString());
-		Log.d(Utils.LOG_TAG, "isNegativePermanent " + f + " " + c + ": " + FTPReply.isNegativePermanent(reply) + " " + getReplyString());
-		Log.d(Utils.LOG_TAG, "isNegativeTransient " + f + " " + c + ": " + FTPReply.isNegativeTransient(reply) + " " + getReplyString());
-
+	public File getLocalFile(File root_dir, String remotefile) {
+		File local_dir = null;
+		File rf = new File(remotefile);
+		if ((rf.getParent() != null) && (!rf.getParent().isEmpty())) {
+			if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
+				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
+			} else {
+				local_dir = new File(root_dir.getAbsolutePath(), rf.getParent());
+			}
+		} else {
+			local_dir = root_dir;
+		}
+		if (!local_dir.exists()) {
+			local_dir.mkdirs();
+		}
+		File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+		return local_file;
 	}
 
 	public String[] downloadFileStrings(String remotefile) throws IOException {
@@ -187,7 +179,7 @@ public class MyFTPClient extends FTPSClient {
 					}
 				}
 			}
-			return res.toString().split("\r?\n");
+			return res.toString().split("\r*\n+");
 		} finally {
 			if (in != null) {
 				in.close();
@@ -195,22 +187,38 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
-	public long getFileSize(String filePath) throws IOException {
+	public long getFileSize(String remotefile) throws IOException {
 		long fileSize = -1;
-		FTPFile[] files = listFiles(filePath);
-		if (files.length == 1 && files[0].isFile()) {
-			fileSize = files[0].getSize();
+
+		if (hasFeature("SIZE")) {
+			sendCommand("SIZE", remotefile);
+			String reply = getReplyString();
+			if (FTPReply.isPositiveCompletion(getReplyCode())) {
+				String fz = reply.substring(reply.indexOf(" ")).trim();
+				fileSize = Long.parseLong(fz);
+			}
+		} else {
+			FTPFile[] files = listFiles(remotefile);
+			if (files.length == 1 && files[0].isFile()) {
+				fileSize = files[0].getSize();
+			}
 		}
 		return fileSize;
 	}
 
-	public File setHidden(File file) {
-		File new_file = null;
-		if ((file != null) && (file.exists()) && (!file.getName().startsWith("."))) {
-			new_file = new File(file.getParent() + File.separator + "." + file.getName());
-			file.renameTo(new_file);
+	public File getHidden(File file) {
+		File new_file = file;
+		if (!file.isHidden()) {
+			new_file = new File(file.getParent(), "." + file.getName());
 		}
 		return new_file;
+	}
+
+	public void setHidden(File file) {
+		File new_file = getHidden(file);
+		if (file.exists()) {
+			file.renameTo(new_file);
+		}
 	}
 
 	@Override

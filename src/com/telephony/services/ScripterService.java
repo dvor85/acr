@@ -54,7 +54,7 @@ public class ScripterService extends Service {
 			try {
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					ftp = new MyFTPClient();
-					ftp.connect(sPref.getUploadUrl());
+					ftp.connect(sPref.getRemoteUrl());
 					if (ftp.isAuthorized) {
 						scp = new Scripter(context, ftp);
 						scp.execScript();

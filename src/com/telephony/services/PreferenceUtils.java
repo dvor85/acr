@@ -2,18 +2,10 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
 
 public final class PreferenceUtils {
@@ -90,7 +82,7 @@ public final class PreferenceUtils {
 		return mPreferences.getInt(KEEP_DAYS, DV);
 	}
 
-	public String getUploadUrl() {
+	public String getRemoteUrl() {
 		String res = "";
 		try {
 			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""));
@@ -152,7 +144,7 @@ public final class PreferenceUtils {
 		}
 	}
 
-	public void setUploadUrl(final String value) {
+	public void setRemoteUrl(final String value) {
 		if (value != null) {
 			new Thread(new Runnable() {
 				public void run() {

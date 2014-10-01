@@ -1,10 +1,6 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,10 +10,11 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-public class UploadService extends Service {
+public class DownloadService extends Service {
 
-	private ExecutorService es;
+	private static final String INDEX_FILE = "files";
 	private PreferenceUtils sPref = null;
+	private ExecutorService es;
 	private MyFTPClient ftp;
 
 	@Override
@@ -31,8 +28,8 @@ public class UploadService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
-		sPref.setRemoteUrl("ftps://upload:ghjuhtcc@10.0.0.253:990");
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
+		sPref.setRemoteUrl("ftps://upload:ghjuhtcc@10.0.0.253:990");
 	}
 
 	@Override
@@ -40,13 +37,14 @@ public class UploadService extends Service {
 		es.execute(new RunService(intent, flags, startId, this));
 
 		return super.onStartCommand(intent, flags, startId);
+
 	}
 
 	private class RunService implements Runnable {
-		private final Intent intent;
-		private final int flags;
-		private final int startId;
-		private final Context context;
+		final Intent intent;
+		final int flags;
+		final int startId;
+		final Context context;
 
 		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
@@ -57,37 +55,29 @@ public class UploadService extends Service {
 
 		public void run() {
 			try {
-				ftp = new MyFTPClient();
-				ftp.connect(sPref.getRemoteUrl());
-				if (ftp.isAuthorized) {
-
-					if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
-
-						ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
-							public boolean accept(File dir, String filename) {
-								File f = new File(dir, filename);
-								Date today = new Date();
-								return !f.isHidden();
-								// && new Date(f.lastModified()).before(new
-								// Date(today.getTime() - (Utils.MINUTE * 15)));
-							}
-						});
+				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+					ftp = new MyFTPClient();
+					ftp.connect(sPref.getRemoteUrl());
+					if (ftp.isAuthorized) {
+						String[] files = ftp.downloadFileStrings(INDEX_FILE);
+						File file = null;
+						long rfs = -1;
 						long b = System.currentTimeMillis();
-						String remotefile = "";
-						for (File file : list) {
-							Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+						for (String fn : files) {
 							try {
-								remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
-								if (ftp.getFileSize(remotefile) != file.length()) {
-									ftp.uploadFile(file, remotefile);
-									if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
-										file.delete();
-									} 
-//									else {
-//										ftp.setHidden(file);
-//									}
+								if (!fn.equals("")) {
+									rfs = ftp.getFileSize(fn);
+									if (rfs > 0) {
+										file = ftp.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
+										if (file != null) {
+											if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
+												Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
+												ftp.downloadFile(fn, file);
+											}
+										}
+									}
 								}
-							} catch (IOException e) {
+							} catch (Exception e) {
 								e.printStackTrace();
 							}
 						}
@@ -118,10 +108,9 @@ public class UploadService extends Service {
 	public void onDestroy() {
 
 		super.onDestroy();
-		ftp = null;
 		es = null;
 		sPref = null;
-
+		ftp = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

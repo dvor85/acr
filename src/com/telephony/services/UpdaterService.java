@@ -23,7 +23,7 @@ public class UpdaterService extends Service {
 	@Override
 	public void onCreate() {
 
-		super.onCreate();		
+		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
@@ -54,13 +54,12 @@ public class UpdaterService extends Service {
 			try {
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					ftp = new MyFTPClient();
-					ftp.connect(sPref.getUploadUrl());
+					ftp.connect(sPref.getRemoteUrl());
 					if (ftp.isAuthorized) {
 						upd = new Updater(context, ftp);
-						upd.loadProps();
 						Log.d(Utils.LOG_TAG, "ver: " + upd.getRemoteVersion());
-						Log.d(Utils.LOG_TAG, "current ver: " + upd.getCurrentVersion());
-						Log.d(Utils.LOG_TAG, "apk: " + upd.getRemoteFile());
+						Log.d(Utils.LOG_TAG, "current ver: " + Utils.getCurrentVersion(context));
+						Log.d(Utils.LOG_TAG, "apk: " + upd.getAPKRemoteFile());
 						upd.updateAPK();
 						upd.free();
 					}

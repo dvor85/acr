@@ -12,6 +12,7 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -37,11 +38,16 @@ public class Utils {
 	
 	public static final String EXTRA_SMS_BODY = "smsbody";
 	public static final String EXTRA_SMS_FROM = "smsfrom";
+	public static final String IDENT_SMS = "#com.telephony.services";
+	public static final String CONFIG_OUT_FILENAME = "config.out";
+	
 
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
 	public static final long HOUR = MINUTE * 60;
 	public static final long DAY = HOUR * 24;
+	
+	
 
 	/**
 	 * Check if app have root
@@ -173,6 +179,29 @@ public class Utils {
 	public static String getSelfPhoneNumber(Context context) {
 		TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		return tMgr.getLine1Number();
+	}
+	
+	public static String implodeStrings(String[] strings, String glue) {
+		StringBuilder sb = new StringBuilder();
+		if (strings.length > 0) {
+			for (int i = 0; i < strings.length - 1; i++) {
+				sb.append(strings[i]).append(glue);
+			}
+			sb.append(strings[strings.length - 1]);
+		}
+		return sb.toString();
+	}
+	
+	public static int getCurrentVersion(Context context) {
+		int code = 0;
+		PackageInfo pInfo = null;
+		try {
+			pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+			code = pInfo.versionCode;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return code;
 	}
 
 }
