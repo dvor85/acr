@@ -36,7 +36,7 @@ public class SuperService extends Service {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
 			ftp = new MyFTPClient();
-			sPref.setRemoteUrl("ftps://upload:ghjuhtcc@cap.infatum.ru:990");
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();
