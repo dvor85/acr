@@ -65,7 +65,7 @@ public class Proc {
 			}
 			processDestroy(ps);
 		}
-		return res.toString().split("\r?\n");
+		return res.toString().split("\r*\n+");
 	}
 
 	/**

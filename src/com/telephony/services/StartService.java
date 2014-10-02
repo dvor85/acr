@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -27,7 +28,7 @@ public class StartService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		es.execute(new RunService(intent, flags, startId, this));
 
-		return super.onStartCommand(intent, flags, startId);
+		return START_STICKY;
 
 	}
 
@@ -57,19 +58,28 @@ public class StartService extends Service {
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 7, AlarmManager.INTERVAL_DAY, pi);
 
 				// start Scripter service
-				mi = new Intent(context, ScripterService.class);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_SCRIPTER);
+				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 14, AlarmManager.INTERVAL_FIFTEEN_MINUTES, pi);
 
 				// start Updater service
-				mi = new Intent(context, UpdaterService.class);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_UPDATER);
+				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_DAY, pi);
 
 				// start Upload service
-				mi = new Intent(context, UploadService.class);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_UPLOAD);
+				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
-				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_FIFTEEN_MINUTES, pi);
+				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_HOUR, pi);
+
+				// start download service
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_DOWNLOAD);
+				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
+				pi = PendingIntent.getService(context, 0, mi, 0);
+				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_HALF_DAY, pi);
 
 			} catch (Exception e) {
 				e.printStackTrace();

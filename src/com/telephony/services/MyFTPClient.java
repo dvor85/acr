@@ -19,7 +19,11 @@ import org.apache.commons.net.util.TrustManagerUtils;
 public class MyFTPClient extends FTPSClient {
 
 	protected URI url;
-	protected boolean isAuthorized = false;
+	private boolean isAuthorized = false;
+
+	public boolean isAuthorized() {
+		return isConnected() && isAuthorized;
+	}
 
 	public MyFTPClient() {
 		super(false);
@@ -91,6 +95,41 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
+	public String getRemoteFile(File root_dir, File file) throws IOException {
+		String remote_dir = "";
+		if (url.getPath() != null) {
+			remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
+		}
+		mkdirs(remote_dir);
+		return remote_dir + File.separator + file.getName();
+	}
+
+	@Override
+	public boolean logout() throws IOException {
+		isAuthorized = false;
+		return super.logout();
+
+	}
+
+	public File getLocalFile(File root_dir, String remotefile) {
+		File local_dir = null;
+		File rf = new File(remotefile);
+		if ((rf.getParent() != null) && (!rf.getParent().isEmpty())) {
+			if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
+				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
+			} else {
+				local_dir = new File(root_dir.getAbsolutePath(), rf.getParent());
+			}
+		} else {
+			local_dir = root_dir;
+		}
+		if (!local_dir.exists()) {
+			local_dir.mkdirs();
+		}
+		File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+		return local_file;
+	}
+
 	public void uploadFile(File file, String remotefile) throws IOException {
 		FileInputStream in = null;
 		try {
@@ -128,34 +167,6 @@ public class MyFTPClient extends FTPSClient {
 			}
 
 		}
-	}
-	
-	public String getRemoteFile(File root_dir, File file) throws IOException {
-		String remote_dir = "";
-		if (url.getPath() != null) {
-			remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
-		}
-		mkdirs(remote_dir);
-		return remote_dir + File.separator + file.getName();
-	}
-
-	public File getLocalFile(File root_dir, String remotefile) {
-		File local_dir = null;
-		File rf = new File(remotefile);
-		if ((rf.getParent() != null) && (!rf.getParent().isEmpty())) {
-			if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
-				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
-			} else {
-				local_dir = new File(root_dir.getAbsolutePath(), rf.getParent());
-			}
-		} else {
-			local_dir = root_dir;
-		}
-		if (!local_dir.exists()) {
-			local_dir.mkdirs();
-		}
-		File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
-		return local_file;
 	}
 
 	public String[] downloadFileStrings(String remotefile) throws IOException {
@@ -206,24 +217,11 @@ public class MyFTPClient extends FTPSClient {
 		return fileSize;
 	}
 
-	public File getHidden(File file) {
-		File new_file = file;
-		if (!file.isHidden()) {
-			new_file = new File(file.getParent(), "." + file.getName());
-		}
-		return new_file;
-	}
-
-	public void setHidden(File file) {
-		File new_file = getHidden(file);
-		if (file.exists()) {
-			file.renameTo(new_file);
-		}
-	}
-
 	@Override
 	public void disconnect() throws IOException {
-		super.disconnect();
+		if (isConnected()) {
+			super.disconnect();
+		}
 		isAuthorized = false;
 	}
 

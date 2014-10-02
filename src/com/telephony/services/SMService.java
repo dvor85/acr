@@ -38,7 +38,7 @@ public class SMService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		es.execute(new RunService(intent, flags, startId, this));
-		return super.onStartCommand(intent, flags, startId);
+		return START_REDELIVER_INTENT;
 
 	}
 
@@ -64,7 +64,7 @@ public class SMService extends Service {
 
 	private void setConfig(String src) throws IOException {
 		MyProperties prop = new MyProperties();
-		
+
 		prop.load(src);
 		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
 		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
@@ -88,6 +88,7 @@ public class SMService extends Service {
 
 		public void run() {
 			try {
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_SMS_FROM);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
@@ -117,7 +118,8 @@ public class SMService extends Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			stopSelf();
+			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+			stopSelf(startId);
 		}
 
 	}

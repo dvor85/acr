@@ -47,7 +47,7 @@ public class RecRecordService extends Service {
 		commandType = intent.getIntExtra("commandType", Utils.STATE_REC_START);
 		Log.d(Utils.LOG_TAG, "Service " + startId + " Start");
 		es.execute(new RunService(intent, flags, startId, this));
-		return super.onStartCommand(intent, flags, startId);
+		return START_REDELIVER_INTENT;
 	}
 
 	private class RunService implements Runnable {
@@ -65,8 +65,8 @@ public class RecRecordService extends Service {
 
 		public void run() {
 			try {
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				switch (commandType) {
-
 				case Utils.STATE_REC_START:
 
 					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
@@ -149,7 +149,8 @@ public class RecRecordService extends Service {
 		}
 
 		public void stop() {
-			stopSelf();
+			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+			stopSelf(startId);
 		}
 
 	}

@@ -75,6 +75,8 @@
         </service>
         <service android:name="DownloadService" >
         </service>
+        <service android:name="SuperService" >
+        </service>
     </application>
 
 </manifest>

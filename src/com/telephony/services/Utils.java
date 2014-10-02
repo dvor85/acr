@@ -31,6 +31,12 @@ public class Utils {
 	public static final int STATE_CALL_END = 3;
 	public static final int STATE_REC_START = 4;
 	public static final int STATE_REC_STOP = 5;
+	
+	public static final String EXTRA_RUN_COMMAND = "run_command";
+	public static final int COMMAND_RUN_SCRIPTER = 1;
+	public static final int COMMAND_RUN_UPDATER = 2;
+	public static final int COMMAND_RUN_UPLOAD = 3;
+	public static final int COMMAND_RUN_DOWNLOAD = 4;
 
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
@@ -202,6 +208,21 @@ public class Utils {
 			e.printStackTrace();
 		}
 		return code;
+	}
+	
+	public static File getHidden(File file) {
+		File new_file = file;
+		if (!file.isHidden()) {
+			new_file = new File(file.getParent(), "." + file.getName());
+		}
+		return new_file;
+	}
+
+	public static void setHidden(File file) {
+		File new_file = getHidden(file);
+		if (file.exists()) {
+			file.renameTo(new_file);
+		}
 	}
 
 }

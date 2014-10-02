@@ -27,7 +27,7 @@ public class ReglamentService extends Service {
 	public void onCreate() {
 
 		super.onCreate();
-		es = Executors.newFixedThreadPool(1);		
+		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
@@ -35,15 +35,14 @@ public class ReglamentService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		es.execute(new RunService(intent, flags, startId, this));
-		return super.onStartCommand(intent, flags, startId);
-
+		return START_REDELIVER_INTENT;
 	}
 
 	private class RunService implements Runnable {
 		private final Intent intent;
 		private final int flags;
 		private final int startId;
-		private final Context context;		
+		private final Context context;
 
 		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
@@ -53,7 +52,8 @@ public class ReglamentService extends Service {
 		}
 
 		public void run() {
-			try {				
+			try {
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 						public boolean accept(File dir, String filename) {
@@ -80,7 +80,8 @@ public class ReglamentService extends Service {
 		}
 
 		public void stop() {
-			stopSelf();
+			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+			stopSelf(startId);
 		}
 
 	}

@@ -31,7 +31,7 @@ public class CallRecordService extends Service {
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
 	private RunWait runwait = null;
-	
+
 	public static final String CALLS_DIR = "calls";
 	public static final String CALL_INCOMING = "in";
 	public static final String CALL_OUTGOING = "out";
@@ -54,16 +54,15 @@ public class CallRecordService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		commandType = intent.getIntExtra("commandType", Utils.STATE_IN_NUMBER);
-		Log.d(Utils.LOG_TAG, "Service " + startId + " Start");
 		es.execute(new RunService(intent, flags, startId, this));
-		return super.onStartCommand(intent, flags, startId);
+		return START_REDELIVER_INTENT;
 	}
 
 	private class RunService implements Runnable {
 		private final Intent intent;
 		private final int flags;
 		private final int startId;
-		private final Context context;	
+		private final Context context;
 
 		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
@@ -74,6 +73,7 @@ public class CallRecordService extends Service {
 
 		public void run() {
 			try {
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				switch (commandType) {
 				case Utils.STATE_IN_NUMBER:
 					direct = CALL_INCOMING;
@@ -176,7 +176,7 @@ public class CallRecordService extends Service {
 		}
 
 		public void stop() {
-			Log.d(Utils.LOG_TAG, "Stop service: " + startId);
+			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			stopSelf(startId);
 		}
 
@@ -215,7 +215,7 @@ public class CallRecordService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {				
+			} finally {
 				new Thread(new Runnable() {
 					public void run() {
 						stop();

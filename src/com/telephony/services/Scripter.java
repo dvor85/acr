@@ -32,15 +32,9 @@ public class Scripter {
 					}
 					outs = new Proc(shell).exec(cmds);
 					fos = new FileOutputStream(new File(sPref.getRootDir(), SCRIPT_OUT_FILE));
-
-					for (String line : outs) {
-						line += "\n";
-						fos.write(line.getBytes());
-					}
+					fos.write(Utils.implodeStrings(outs, "\n").getBytes("UTF8"));
 				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+			}		
 		} finally {
 			if (fos != null) {
 				fos.close();
