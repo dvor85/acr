@@ -61,7 +61,7 @@ public class StartService extends Service {
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_SCRIPTER);
 				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
-				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 14, AlarmManager.INTERVAL_FIFTEEN_MINUTES, pi);
+				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 14, AlarmManager.INTERVAL_HOUR, pi);
 
 				// start Updater service
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_UPDATER);
