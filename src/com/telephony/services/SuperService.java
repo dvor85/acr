@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 import android.app.Service;
 import android.content.Context;
@@ -73,10 +72,10 @@ public class SuperService extends Service {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: "
 						+ run_command);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
-					if (!ftp.isAuthorized()) {
+					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
-					if (ftp.isAuthorized()) {
+					if (ftp.isReady()) {
 						switch (run_command) {
 						case Utils.COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
@@ -101,9 +100,7 @@ public class SuperService extends Service {
 											&& new Date(f.lastModified()).before(new Date(today.getTime()
 													- (Utils.HOUR)));
 								}
-							});
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
-							Log.d(Utils.LOG_TAG, "count files: " + list.size());
+							});							
 							String remotefile = "";
 							for (File file : list) {
 								try {
@@ -121,7 +118,7 @@ public class SuperService extends Service {
 									}
 								} catch (IOException e) {
 									e.printStackTrace();
-									if (!ftp.isAuthorized()) {
+									if (!ftp.isReady()) {
 										break;
 									}
 								}
@@ -150,7 +147,7 @@ public class SuperService extends Service {
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
-									if (!ftp.isAuthorized()) {
+									if (!ftp.isReady()) {
 										break;
 									}
 								}

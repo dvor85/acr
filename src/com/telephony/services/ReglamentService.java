@@ -35,7 +35,7 @@ public class ReglamentService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		es.execute(new RunService(intent, flags, startId, this));
-		return START_REDELIVER_INTENT;
+		return START_STICKY;
 	}
 
 	private class RunService implements Runnable {

@@ -19,11 +19,7 @@ import org.apache.commons.net.util.TrustManagerUtils;
 public class MyFTPClient extends FTPSClient {
 
 	protected URI url;
-	private boolean isAuthorized = false;
-
-	public boolean isAuthorized() throws IOException {		
-		return isConnected() && isAuthorized && sendNoOp();
-	}
+	private boolean isAuthorized = false;	
 
 	public MyFTPClient() {
 		super(false);
@@ -38,10 +34,16 @@ public class MyFTPClient extends FTPSClient {
 		isAuthorized = false;
 
 	}
+	
+	public boolean isReady() throws IOException {		
+		return isConnected() && isAuthorized && sendNoOp();
+	}
 
 	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
+		int port = 21;
+		String proto = "";
 
 		try {
 			url = new URI(surl);
@@ -55,9 +57,20 @@ public class MyFTPClient extends FTPSClient {
 			username = auth[0];
 			password = auth[1];
 		}
+		
+		proto = url.getScheme();		
+		port = url.getPort();
+		if (port == -1) {
+			if ("ftp".equals(proto)) {
+				port = DEFAULT_PORT;
+			} else if ("ftps".equals(proto)) {
+				port = DEFAULT_FTPS_PORT;
+			}
+		}
+		
 		setConnectTimeout(10000);
-		setDefaultTimeout(10000);
-		super.connect(url.getHost(), url.getPort());
+		setDefaultTimeout(20000);
+		super.connect(url.getHost(), port);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
 		}

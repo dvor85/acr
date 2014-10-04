@@ -95,7 +95,7 @@ public class SMService extends Service {
 					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
 					if (sms_body != null) {
 						if (sms_body.equals(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "Send configuration to " + phoneNumber);
+							Log.d(Utils.LOG_TAG, "Send configuration");
 							getConfig(Utils.CONFIG_OUT_FILENAME);
 						} else if (sms_body.startsWith(Utils.IDENT_SMS)) {
 							Log.d(Utils.LOG_TAG, "set configuration");

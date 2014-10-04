@@ -1,7 +1,6 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.IOException;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -31,21 +30,19 @@ public final class PreferenceUtils {
 	}
 
 	public File getRootDir() {
-
-		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
-				+ File.separator + "." + getClass().getPackage().getName() + File.separator + "files";
-		File root_dir = null;
+		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
+				+ File.separator + "data" + File.separator + "." + getClass().getPackage().getName() + File.separator
+				+ "files";
+		File root_dir = new File(DV);
 
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
-				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, DV)));
-			} else {
-				throw new IOException("Key \"" + ROOT_DIR + "\" not found!");
+				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, "")));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			root_dir = new File(DV);
 			setRootDir(DV);
+
 		} finally {
 			if (!root_dir.exists()) {
 				root_dir.mkdirs();
@@ -61,7 +58,7 @@ public final class PreferenceUtils {
 	}
 
 	public int getVibrateTime() {
-		int DV = 200;		
+		int DV = 200;
 		return mPreferences.getInt(VIBRATE_TIME, DV);
 	}
 
