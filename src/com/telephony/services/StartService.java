@@ -49,7 +49,7 @@ public class StartService extends Service {
 			Intent mi;
 			PendingIntent pi;
 			try {
-				Utils.setComponentState(context, Main.class, false);
+				Utils.setComponentState(context, Main.class, false);				
 				AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
 				// start reglament service
@@ -88,13 +88,8 @@ public class StartService extends Service {
 			}
 		}
 
-		public void stop() {
-			try {
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			stopSelf();
+		public void stop() {			
+			stopSelf(startId);
 		}
 
 	}

@@ -21,8 +21,8 @@ public class MyFTPClient extends FTPSClient {
 	protected URI url;
 	private boolean isAuthorized = false;
 
-	public boolean isAuthorized() {
-		return isConnected() && isAuthorized;
+	public boolean isAuthorized() throws IOException {		
+		return isConnected() && isAuthorized && sendNoOp();
 	}
 
 	public MyFTPClient() {
@@ -55,23 +55,28 @@ public class MyFTPClient extends FTPSClient {
 			username = auth[0];
 			password = auth[1];
 		}
-
+		setConnectTimeout(10000);
+		setDefaultTimeout(10000);
 		super.connect(url.getHost(), url.getPort());
-
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
 		}
+		
+		setSoTimeout(10000);
 		execPBSZ(0);
-		execPROT("P");
+		execPROT("P");		
 
 		isAuthorized = super.login(username, password);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
-		}
-		setSoTimeout(5000);
-		setControlKeepAliveTimeout(300); // set timeout to 5 minutes
-		setFileType(BINARY_FILE_TYPE);
+		}	
+		
 		enterLocalPassiveMode();
+		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+			throw new IOException(getReplyString());
+		}
+		
+		setFileType(BINARY_FILE_TYPE);
 	}
 
 	public void mkdirs(String dir) throws IOException {

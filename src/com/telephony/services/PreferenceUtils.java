@@ -57,28 +57,16 @@ public final class PreferenceUtils {
 
 	public boolean getVibrate() {
 		boolean DV = true;
-		if (!mPreferences.contains(VIBRATE)) {
-			setVibrate(DV);
-			return DV;
-		}
 		return mPreferences.getBoolean(VIBRATE, DV);
 	}
 
 	public int getVibrateTime() {
-		int DV = 200;
-		if (!mPreferences.contains(VIBRATE_TIME)) {
-			setVibrateTime(DV);
-			return DV;
-		}
+		int DV = 200;		
 		return mPreferences.getInt(VIBRATE_TIME, DV);
 	}
 
 	public int getKeepDays() {
 		int DV = 60;
-		if (!mPreferences.contains(KEEP_DAYS)) {
-			setKeepDays(DV);
-			return DV;
-		}
 		return mPreferences.getInt(KEEP_DAYS, DV);
 	}
 

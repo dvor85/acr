@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import android.app.Service;
 import android.content.Context;
@@ -36,7 +37,6 @@ public class SuperService extends Service {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
 			ftp = new MyFTPClient();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -66,9 +66,12 @@ public class SuperService extends Service {
 		}
 
 		public void run() {
+			long rfs = -1;
+			long b;
 			try {
-				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				run_command = intent.getIntExtra(Utils.EXTRA_RUN_COMMAND, 0);
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: "
+						+ run_command);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					if (!ftp.isAuthorized()) {
 						ftp.connect(sPref.getRemoteUrl());
@@ -89,6 +92,7 @@ public class SuperService extends Service {
 							break;
 
 						case Utils.COMMAND_RUN_UPLOAD:
+							b = System.currentTimeMillis();
 							ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 								public boolean accept(File dir, String filename) {
 									File f = new File(dir, filename);
@@ -98,9 +102,10 @@ public class SuperService extends Service {
 													- (Utils.HOUR)));
 								}
 							});
-							long b = System.currentTimeMillis();
+							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
+							Log.d(Utils.LOG_TAG, "count files: " + list.size());
 							String remotefile = "";
-							for (File file : list) {								
+							for (File file : list) {
 								try {
 									remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
 									if (ftp.getFileSize(remotefile) != file.length()) {
@@ -108,13 +113,17 @@ public class SuperService extends Service {
 										ftp.uploadFile(file, remotefile);
 										if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
 											file.delete();
+										} else {
+											Utils.setHidden(file);
 										}
-										// else {
-										// ftp.setHidden(file);
-										// }
+									} else {
+										Utils.setHidden(file);
 									}
 								} catch (IOException e) {
 									e.printStackTrace();
+									if (!ftp.isAuthorized()) {
+										break;
+									}
 								}
 							}
 							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
@@ -123,8 +132,7 @@ public class SuperService extends Service {
 						case Utils.COMMAND_RUN_DOWNLOAD:
 							String[] files = ftp.downloadFileStrings(INDEX_FILE);
 							File file = null;
-							long rfs = -1;
-							long b1 = System.currentTimeMillis();
+							b = System.currentTimeMillis();
 							for (String fn : files) {
 								try {
 									if (!fn.equals("")) {
@@ -142,9 +150,12 @@ public class SuperService extends Service {
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
+									if (!ftp.isAuthorized()) {
+										break;
+									}
 								}
 							}
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b1));
+							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
 							break;
 
 						default:
@@ -165,6 +176,7 @@ public class SuperService extends Service {
 			try {
 				if (stopSelfResult(startId)) {
 					if (ftp != null) {
+						ftp.logout();
 						ftp.disconnect();
 					}
 				}
