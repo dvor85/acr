@@ -2,7 +2,6 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
@@ -116,7 +115,7 @@ public class SuperService extends Service {
 									} else {
 										Utils.setHidden(file);
 									}
-								} catch (IOException e) {
+								} catch (Exception e) {
 									e.printStackTrace();
 									if (!ftp.isReady()) {
 										break;
@@ -172,12 +171,11 @@ public class SuperService extends Service {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			try {
 				if (stopSelfResult(startId)) {
-					if (ftp != null) {
-						ftp.logout();
+					if (ftp != null) {						
 						ftp.disconnect();
 					}
 				}
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
