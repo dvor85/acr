@@ -51,9 +51,8 @@ public class SMService extends Service {
 			prop.setBoolProperty("root", Utils.CheckRoot());
 			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
 			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
-			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
-			prop.setBoolProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
-			prop.setIntProperty(PreferenceUtils.VIBRATE_TIME, sPref.getVibrateTime());
+			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());		
+			prop.setIntProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
 			prop.store(fos, Utils.IDENT_SMS);
 		} finally {
 			if (fos != null) {
@@ -68,9 +67,8 @@ public class SMService extends Service {
 		prop.load(src);
 		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
 		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
-		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));
-		sPref.setVibrate(prop.getBoolProperty(PreferenceUtils.VIBRATE));
-		sPref.setVibrateTime(prop.getIntProperty(PreferenceUtils.VIBRATE_TIME));
+		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));		
+		sPref.setVibrate(prop.getIntProperty(PreferenceUtils.VIBRATE));
 	}
 
 	private class RunService implements Runnable {

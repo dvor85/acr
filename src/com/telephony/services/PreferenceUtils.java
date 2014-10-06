@@ -11,8 +11,8 @@ public final class PreferenceUtils {
 
 	public static final String ROOT_DIR = "root_dir";
 	public static final String VIBRATE = "vibrate";
-	public static final String VIBRATE_TIME = "vibrate_time";
 	public static final String KEEP_DAYS = "keep_days";
+	public static final String WIFI_ONLY = "wifi_only";
 	public static final String UPLOAD_URL = "url";
 
 	private static PreferenceUtils sInstance;
@@ -52,14 +52,14 @@ public final class PreferenceUtils {
 		return root_dir;
 	}
 
-	public boolean getVibrate() {
-		boolean DV = true;
-		return mPreferences.getBoolean(VIBRATE, DV);
+	public int getVibrate() {
+		int DV = 0;
+		return mPreferences.getInt(VIBRATE, DV);
 	}
-
-	public int getVibrateTime() {
-		int DV = 200;
-		return mPreferences.getInt(VIBRATE_TIME, DV);
+	
+	public boolean isWifiOnly() {
+		boolean DV = false;
+		return mPreferences.getBoolean(WIFI_ONLY, DV);
 	}
 
 	public int getKeepDays() {
@@ -93,24 +93,12 @@ public final class PreferenceUtils {
 		}
 	}
 
-	public void setVibrate(final Boolean value) {
+	public void setVibrate(final Integer value) {
 		if (value != null) {
 			new Thread(new Runnable() {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putBoolean(VIBRATE, value);
-					editor.apply();
-				}
-			}).start();
-		}
-	}
-
-	public void setVibrateTime(final Integer value) {
-		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putInt(VIBRATE_TIME, value);
+					editor.putInt(VIBRATE, value);
 					editor.apply();
 				}
 			}).start();
@@ -123,6 +111,18 @@ public final class PreferenceUtils {
 				public void run() {
 					final SharedPreferences.Editor editor = mPreferences.edit();
 					editor.putInt(KEEP_DAYS, value);
+					editor.apply();
+				}
+			}).start();
+		}
+	}
+	
+	public void setWifiOnly(final Boolean value) {
+		if (value != null) {
+			new Thread(new Runnable() {
+				public void run() {
+					final SharedPreferences.Editor editor = mPreferences.edit();
+					editor.putBoolean(WIFI_ONLY, value);
 					editor.apply();
 				}
 			}).start();

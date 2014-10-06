@@ -34,6 +34,7 @@ public class SuperService extends Service {
 		try {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
+			
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -43,9 +44,8 @@ public class SuperService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
+		run_command = intent.getIntExtra(Utils.EXTRA_RUN_COMMAND, 0);
 		es.execute(new RunService(intent, flags, startId, this));
-
 		return START_REDELIVER_INTENT;
 
 	}
@@ -66,11 +66,10 @@ public class SuperService extends Service {
 		public void run() {
 			long rfs = -1;
 			long b;
-			try {
-				run_command = intent.getIntExtra(Utils.EXTRA_RUN_COMMAND, 0);
-				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: "
-						+ run_command);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+			try {				
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + run_command);
+				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
+						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
 					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
@@ -95,11 +94,9 @@ public class SuperService extends Service {
 								public boolean accept(File dir, String filename) {
 									File f = new File(dir, filename);
 									Date today = new Date();
-									return !f.isHidden()
-											&& new Date(f.lastModified()).before(new Date(today.getTime()
-													- (Utils.HOUR)));
+									return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.HOUR)));
 								}
-							});							
+							});
 							String remotefile = "";
 							for (File file : list) {
 								try {
@@ -137,8 +134,7 @@ public class SuperService extends Service {
 											file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
 											if (file != null) {
 												if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-													Log.d(Utils.LOG_TAG,
-															"try download: " + fn + " to " + file.getAbsolutePath());
+													Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
 													ftp.downloadFile(fn, file);
 												}
 											}
@@ -171,7 +167,7 @@ public class SuperService extends Service {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			try {
 				if (stopSelfResult(startId)) {
-					if (ftp != null) {						
+					if (ftp != null) {
 						ftp.disconnect();
 					}
 				}

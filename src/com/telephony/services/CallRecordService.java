@@ -89,8 +89,8 @@ public class CallRecordService extends Service {
 					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
 						runwait = new RunWait();
 						runwait.run();
-						if ((commandType == Utils.STATE_CALL_START) && (sPref.getVibrate())) {
-							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrateTime());
+						if (commandType == Utils.STATE_CALL_START) {
+							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());
 							Log.d(Utils.LOG_TAG, "VIBRATE");
 						}
 					}
