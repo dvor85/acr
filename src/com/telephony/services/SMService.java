@@ -103,8 +103,8 @@ public class SMService extends Service {
 
 					Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {				
+					e.printStackTrace();			
 			} finally {
 				stop();
 			}
@@ -113,8 +113,8 @@ public class SMService extends Service {
 		public void stop() {
 			try {
 
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {			
+				e.printStackTrace();			
 			}
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			stopSelf(startId);

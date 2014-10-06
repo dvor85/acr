@@ -25,17 +25,19 @@ import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
 
 public class Utils {
-
+	
 	public static final String LOG_TAG = "myLogs";
-
+	
+	public static final String EXTRA_COMMAND = "command";
+	
+	public static final String EXTRA_PHONE_NUMBER = "phoneNumber";	
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
 	public static final int STATE_REC_START = 4;
 	public static final int STATE_REC_STOP = 5;
-
-	public static final String EXTRA_RUN_COMMAND = "run_command";
+	
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;
 	public static final int COMMAND_RUN_UPLOAD = 3;
@@ -83,25 +85,14 @@ public class Utils {
 		return false;
 	}
 
-	public static int getInternetType(Context context) {
-		int res = -1;
+	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
+		int sec = 0;
 		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-		if (activeNetwork != null && activeNetwork.isConnected()) {
-			res = activeNetwork.getType();
-		}
-		return res;
-	}
-
-	public static boolean waitForInternet(Context context, boolean isWifi, int secs) throws InterruptedException {
-		int cnt = 0;
-		int inetType = -1;
-		while ((cnt < secs)) {
-			inetType = Utils.getInternetType(context);
-			if (inetType >= 0) {
-				if (isWifi) {
-					if ((inetType != ConnectivityManager.TYPE_MOBILE)) {
+		while (sec < seconds) {
+			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();			
+			if (activeNetwork != null && activeNetwork.isConnected()) {
+				if (wifiOnly) {
+					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
 						return true;
 					}
 				} else {
@@ -109,7 +100,7 @@ public class Utils {
 				}
 			}
 			TimeUnit.SECONDS.sleep(1);
-			cnt += 1;
+			sec += 1;
 		}
 		return false;
 	}

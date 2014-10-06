@@ -72,8 +72,8 @@ public class ReglamentService extends Service {
 					}
 
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {			
+				e.printStackTrace();				
 			} finally {
 				stop();
 			}

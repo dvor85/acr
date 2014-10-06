@@ -19,7 +19,7 @@ public class RecRecordService extends Service {
 
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
-	private int commandType;
+	private int command;
 	private String myFileName = null;
 	private long BTime = System.currentTimeMillis();
 	private ExecutorService es;
@@ -44,7 +44,7 @@ public class RecRecordService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		commandType = intent.getIntExtra("commandType", Utils.STATE_REC_START);
+		command = intent.getIntExtra(Utils.EXTRA_COMMAND, Utils.STATE_REC_START);
 		Log.d(Utils.LOG_TAG, "Service " + startId + " Start");
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
@@ -66,7 +66,7 @@ public class RecRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
-				switch (commandType) {
+				switch (command) {
 				case Utils.STATE_REC_START:
 
 					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
@@ -77,8 +77,8 @@ public class RecRecordService extends Service {
 							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 							recorder.setOutputFile(myFileName);
 						} catch (Exception e) {
-							terminateAndEraseFile();
-							e.printStackTrace();
+							terminateAndEraseFile();						
+								e.printStackTrace();				
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {
@@ -114,7 +114,7 @@ public class RecRecordService extends Service {
 							recorder.start();
 
 						} catch (Exception e) {
-							terminateAndEraseFile();
+							terminateAndEraseFile();					
 							e.printStackTrace();
 						}
 					}
@@ -130,8 +130,8 @@ public class RecRecordService extends Service {
 								recorder = null;
 							}
 
-						} catch (Exception e) {
-							e.printStackTrace();
+						} catch (Exception e) {					
+								e.printStackTrace();							
 						}
 
 						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
@@ -142,8 +142,8 @@ public class RecRecordService extends Service {
 					}
 					break;
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {			
+					e.printStackTrace();				
 			}
 
 		}
@@ -167,8 +167,8 @@ public class RecRecordService extends Service {
 				recorder = null;
 			}
 
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (Exception e) {			
+				e.printStackTrace();			
 		}
 		if (myFileName != null) {
 			File file = new File(myFileName);
@@ -213,8 +213,8 @@ public class RecRecordService extends Service {
 					root_dir.mkdirs();
 				}
 				nomedia_file.createNewFile();
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {				
+					e.printStackTrace();
 			}
 		}
 

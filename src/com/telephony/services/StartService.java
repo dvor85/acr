@@ -49,34 +49,35 @@ public class StartService extends Service {
 			Intent mi;
 			PendingIntent pi;
 			try {
-				//Utils.setComponentState(context, Main.class, false);				
-				AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+				//Utils.setComponentState(context, Main.class, false);
 
+				AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+			
 				// start reglament service
 				mi = new Intent(context, ReglamentService.class);
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 7, AlarmManager.INTERVAL_DAY, pi);
 
 				// start Scripter service
-				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_SCRIPTER);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_RUN_SCRIPTER);
 				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 14, AlarmManager.INTERVAL_HOUR, pi);
 
 				// start Updater service
-				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_UPDATER);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_RUN_UPDATER);
 				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_DAY, pi);
 
 				// start Upload service
-				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_UPLOAD);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_RUN_UPLOAD);
 				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_HOUR, pi);
 
 				// start download service
-				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_RUN_COMMAND, Utils.COMMAND_RUN_DOWNLOAD);
+				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_RUN_DOWNLOAD);
 				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.setRepeating(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, AlarmManager.INTERVAL_HALF_DAY, pi);
@@ -88,7 +89,7 @@ public class StartService extends Service {
 			}
 		}
 
-		public void stop() {			
+		public void stop() {
 			stopSelf(startId);
 		}
 
@@ -96,7 +97,6 @@ public class StartService extends Service {
 
 	@Override
 	public void onDestroy() {
-
 		super.onDestroy();
 		es = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
@@ -104,7 +104,6 @@ public class StartService extends Service {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

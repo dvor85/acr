@@ -25,7 +25,7 @@ public class CallRecordService extends Service {
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
 	private String phoneNumber = null;
-	private int commandType;
+	private int command;
 	private String direct = "";
 	private String myFileName = null;
 	private long BTime = System.currentTimeMillis();
@@ -53,7 +53,7 @@ public class CallRecordService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		commandType = intent.getIntExtra("commandType", Utils.STATE_IN_NUMBER);
+		command = intent.getIntExtra(Utils.EXTRA_COMMAND, Utils.STATE_IN_NUMBER);
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 	}
@@ -74,14 +74,14 @@ public class CallRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
-				switch (commandType) {
+				switch (command) {
 				case Utils.STATE_IN_NUMBER:
 					direct = CALL_INCOMING;
-					phoneNumber = intent.getStringExtra("phoneNumber");
+					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
 				case Utils.STATE_OUT_NUMBER:
 					direct = CALL_OUTGOING;
-					phoneNumber = intent.getStringExtra("phoneNumber");
+					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
 
 				case Utils.STATE_CALL_START:
@@ -89,13 +89,12 @@ public class CallRecordService extends Service {
 					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
 						runwait = new RunWait();
 						runwait.run();
-						if (commandType == Utils.STATE_CALL_START) {
-							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());
-							Log.d(Utils.LOG_TAG, "VIBRATE");
+						if (command == Utils.STATE_CALL_START) {
+							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());							
 						}
 					}
 
-					if ((commandType == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((command == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						try {
 							recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
@@ -228,14 +227,8 @@ public class CallRecordService extends Service {
 		void stop() {
 			if (running) {
 				running = false;
-				try {
-					// Log.d(Utils.LOG_TAG, "BEGIN");
-					// Log.d(Utils.LOG_TAG, "Childs of " + ppid + ": " + new
-					// Proc("su").getChilds("398"));
-
-					// Thread.currentThread();
-					new Proc("su").killTree(ppid);
-					// TimeUnit.SECONDS.sleep(10);
+				try {					
+					new Proc("su").killTree(ppid);					
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 					e.printStackTrace();

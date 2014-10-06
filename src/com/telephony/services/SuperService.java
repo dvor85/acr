@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Debug;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -21,7 +22,7 @@ public class SuperService extends Service {
 	private MyFTPClient ftp = null;
 	private Updater upd = null;
 	private Scripter scp = null;
-	private int run_command = 0;
+	private int command = 0;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -34,7 +35,7 @@ public class SuperService extends Service {
 		try {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
-			
+
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -44,7 +45,6 @@ public class SuperService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		run_command = intent.getIntExtra(Utils.EXTRA_RUN_COMMAND, 0);
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 
@@ -66,15 +66,16 @@ public class SuperService extends Service {
 		public void run() {
 			long rfs = -1;
 			long b;
-			try {				
-				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + run_command);
+			try {
+				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
 						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
 					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
 					if (ftp.isReady()) {
-						switch (run_command) {
+						switch (command) {
 						case Utils.COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
 							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
