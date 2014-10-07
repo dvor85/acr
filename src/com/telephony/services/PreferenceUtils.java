@@ -1,6 +1,13 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -17,9 +24,14 @@ public final class PreferenceUtils {
 
 	private static PreferenceUtils sInstance;
 	private final SharedPreferences mPreferences;
+	private final String key;
+	private final String default_root_dir;
 
 	private PreferenceUtils(final Context context) {
-		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);		
+		default_root_dir = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
+				+ File.separator + "." + context.getApplicationContext().getPackageName() + File.separator + "files";
+		key = Utils.getDeviceId(context);
 	}
 
 	public static final PreferenceUtils getInstance(final Context context) {
@@ -29,19 +41,16 @@ public final class PreferenceUtils {
 		return sInstance;
 	}
 
-	public File getRootDir() {
-		String DV = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
-				+ File.separator + "data" + File.separator + "." + getClass().getPackage().getName() + File.separator
-				+ "files";
-		File root_dir = new File(DV);
-
+	public File getRootDir() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
+			NoSuchAlgorithmException, NoSuchPaddingException {		
+		File root_dir = new File(default_root_dir);
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
-				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, "")));
+				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, ""), key));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			setRootDir(DV);
+			setRootDir(default_root_dir);
 
 		} finally {
 			if (!root_dir.exists()) {
@@ -56,7 +65,7 @@ public final class PreferenceUtils {
 		int DV = 0;
 		return mPreferences.getInt(VIBRATE, DV);
 	}
-	
+
 	public boolean isWifiOnly() {
 		boolean DV = false;
 		return mPreferences.getBoolean(WIFI_ONLY, DV);
@@ -67,83 +76,53 @@ public final class PreferenceUtils {
 		return mPreferences.getInt(KEEP_DAYS, DV);
 	}
 
-	public String getRemoteUrl() {
+	public String getRemoteUrl() throws InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
+			NoSuchAlgorithmException, NoSuchPaddingException {
 		String res = "";
-		try {
-			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
 		return res;
 	}
 
-	public void setRootDir(final String value) {
+	public void setRootDir(final String value) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
+			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					try {
-						final SharedPreferences.Editor editor = mPreferences.edit();
-						editor.putString(ROOT_DIR, Crypter.encrypt(value));
-						editor.apply();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}).start();
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putString(ROOT_DIR, Crypter.encrypt(value, key));
+			editor.apply();
 		}
 	}
 
 	public void setVibrate(final Integer value) {
 		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putInt(VIBRATE, value);
-					editor.apply();
-				}
-			}).start();
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putInt(VIBRATE, value);
+			editor.apply();
 		}
 	}
 
 	public void setKeepDays(final Integer value) {
 		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putInt(KEEP_DAYS, value);
-					editor.apply();
-				}
-			}).start();
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putInt(KEEP_DAYS, value);
+			editor.apply();
 		}
 	}
-	
+
 	public void setWifiOnly(final Boolean value) {
 		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					editor.putBoolean(WIFI_ONLY, value);
-					editor.apply();
-				}
-			}).start();
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putBoolean(WIFI_ONLY, value);
+			editor.apply();
 		}
 	}
 
-	public void setRemoteUrl(final String value) {
+	public void setRemoteUrl(final String value) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
+			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		if (value != null) {
-			new Thread(new Runnable() {
-				public void run() {
-					final SharedPreferences.Editor editor = mPreferences.edit();
-					try {
-						String crStr = Crypter.encrypt(value);
-						editor.putString(UPLOAD_URL, crStr);
-						editor.apply();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-
-				}
-			}).start();
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			String crStr = Crypter.encrypt(value, key);
+			editor.putString(UPLOAD_URL, crStr);
+			editor.apply();
 		}
 	}
 

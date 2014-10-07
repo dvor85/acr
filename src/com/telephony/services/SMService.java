@@ -4,8 +4,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.app.Service;
 import android.content.Context;
@@ -42,16 +48,19 @@ public class SMService extends Service {
 
 	}
 
-	private void getConfig(String filename) throws UnsupportedEncodingException, IOException {
+	private void getConfig(String filename) throws UnsupportedEncodingException, IOException, InvalidKeyException, IllegalBlockSizeException,
+			BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		FileOutputStream fos = null;
 		MyProperties prop = new MyProperties();
 		try {
 			fos = new FileOutputStream(new File(sPref.getRootDir(), filename));
-			prop.setProperty("phone_number", Utils.getSelfPhoneNumber(this));
+			prop.setIntProperty("Current version", Utils.getCurrentVersion(this));
+			prop.setProperty("phoneNumber", Utils.getSelfPhoneNumber(this));
+			prop.setProperty("DeviceId", Utils.getDeviceId(this));
 			prop.setBoolProperty("root", Utils.CheckRoot());
 			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
 			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
-			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());		
+			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
 			prop.setIntProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
 			prop.store(fos, Utils.IDENT_SMS);
 		} finally {
@@ -61,13 +70,14 @@ public class SMService extends Service {
 		}
 	}
 
-	private void setConfig(String src) throws IOException {
+	private void setConfig(String src) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
+			NoSuchAlgorithmException, NoSuchPaddingException {
 		MyProperties prop = new MyProperties();
 
 		prop.load(src);
 		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
 		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
-		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));		
+		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));
 		sPref.setVibrate(prop.getIntProperty(PreferenceUtils.VIBRATE));
 	}
 
@@ -88,7 +98,7 @@ public class SMService extends Service {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
-					phoneNumber = intent.getStringExtra(Utils.EXTRA_SMS_FROM);
+					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
 					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
 					if (sms_body != null) {
@@ -96,15 +106,16 @@ public class SMService extends Service {
 							Log.d(Utils.LOG_TAG, "Send configuration");
 							getConfig(Utils.CONFIG_OUT_FILENAME);
 						} else if (sms_body.startsWith(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "set configuration");
+							Log.d(Utils.LOG_TAG, "Set configuration");
 							setConfig(sms_body);
+							getConfig(Utils.CONFIG_OUT_FILENAME);
 						}
 					}
 
 					Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 				}
-			} catch (Exception e) {				
-					e.printStackTrace();			
+			} catch (Exception e) {
+				e.printStackTrace();
 			} finally {
 				stop();
 			}
@@ -113,8 +124,8 @@ public class SMService extends Service {
 		public void stop() {
 			try {
 
-			} catch (Exception e) {			
-				e.printStackTrace();			
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			stopSelf(startId);

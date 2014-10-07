@@ -3,6 +3,12 @@ package com.telephony.services;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 
@@ -18,7 +24,8 @@ public class Scripter {
 		sPref = PreferenceUtils.getInstance(context);
 	}
 
-	public void execScript() throws IOException {
+	public void execScript() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
+			NoSuchPaddingException {
 		String[] cmds = null;
 		String[] outs = null;
 		FileOutputStream fos = null;
@@ -34,7 +41,7 @@ public class Scripter {
 					fos = new FileOutputStream(new File(sPref.getRootDir(), SCRIPT_OUT_FILE));
 					fos.write(Utils.implodeStrings(outs, "\n").getBytes("UTF8"));
 				}
-			}		
+			}
 		} finally {
 			if (fos != null) {
 				fos.close();

