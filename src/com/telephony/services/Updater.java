@@ -66,7 +66,7 @@ public class Updater {
 				}
 				if (downloadSuccsess && apk_file.exists()) {
 					if (Utils.CheckRoot()) {
-						new Proc("su").exec(new String[] { "pm install " + apk_file.getAbsolutePath() });
+						new Proc("su").exec(new String[] { "pm install -r " + apk_file.getAbsolutePath() });
 					} else {						
 						Intent intent = new Intent(Intent.ACTION_VIEW);
 						intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");						
