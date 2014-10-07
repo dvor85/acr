@@ -186,11 +186,11 @@ public class Utils {
 		return res;
 	}
 
-	public static void show_notification(Context context, int mId, Intent intent) {
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher)
+	public static void show_notification(Context context, int mId, String subtext, Intent intent) {
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
 				.setContentTitle(context.getResources().getString(R.string.update_title))
 				.setContentText(context.getResources().getString(R.string.update_text))
-				.setSubText(context.getResources().getString(R.string.update_subtext)).setAutoCancel(true);
+				.setSubText(subtext).setAutoCancel(true);
 
 		PendingIntent pi = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
 		mBuilder.setContentIntent(pi);
