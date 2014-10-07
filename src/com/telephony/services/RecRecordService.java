@@ -1,9 +1,16 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.app.Service;
 import android.content.Context;
@@ -77,8 +84,8 @@ public class RecRecordService extends Service {
 							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 							recorder.setOutputFile(myFileName);
 						} catch (Exception e) {
-							terminateAndEraseFile();						
-								e.printStackTrace();				
+							terminateAndEraseFile();
+							e.printStackTrace();
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {
@@ -114,7 +121,7 @@ public class RecRecordService extends Service {
 							recorder.start();
 
 						} catch (Exception e) {
-							terminateAndEraseFile();					
+							terminateAndEraseFile();
 							e.printStackTrace();
 						}
 					}
@@ -130,8 +137,8 @@ public class RecRecordService extends Service {
 								recorder = null;
 							}
 
-						} catch (Exception e) {					
-								e.printStackTrace();							
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
 
 						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
@@ -142,8 +149,8 @@ public class RecRecordService extends Service {
 					}
 					break;
 				}
-			} catch (Exception e) {			
-					e.printStackTrace();				
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 		}
@@ -167,8 +174,8 @@ public class RecRecordService extends Service {
 				recorder = null;
 			}
 
-		} catch (Exception e) {			
-				e.printStackTrace();			
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		if (myFileName != null) {
 			File file = new File(myFileName);
@@ -201,8 +208,15 @@ public class RecRecordService extends Service {
 	 * returns absolute file name
 	 * 
 	 * @return
+	 * @throws NoSuchPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 * @throws BadPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws InvalidKeyException
 	 */
-	private String getFilename() {
+	private String getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
+			NoSuchAlgorithmException, NoSuchPaddingException {
 		String recs_dir = sPref.getRootDir().getAbsolutePath() + File.separator + RECS_DIR;
 
 		File nomedia_file = new File(recs_dir, ".nomedia");
@@ -213,8 +227,8 @@ public class RecRecordService extends Service {
 					root_dir.mkdirs();
 				}
 				nomedia_file.createNewFile();
-			} catch (Exception e) {				
-					e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 

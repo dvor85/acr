@@ -5,9 +5,16 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import android.app.Service;
 import android.content.Context;
@@ -90,7 +97,7 @@ public class CallRecordService extends Service {
 						runwait = new RunWait();
 						runwait.run();
 						if (command == Utils.STATE_CALL_START) {
-							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());							
+							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());
 						}
 					}
 
@@ -227,8 +234,8 @@ public class CallRecordService extends Service {
 		void stop() {
 			if (running) {
 				running = false;
-				try {					
-					new Proc("su").killTree(ppid);					
+				try {
+					new Proc("su").killTree(ppid);
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -288,8 +295,15 @@ public class CallRecordService extends Service {
 	 * returns absolute file name
 	 * 
 	 * @return
+	 * @throws NoSuchPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 * @throws BadPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws InvalidKeyException
 	 */
-	private String getFilename() {
+	private String getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
+			NoSuchAlgorithmException, NoSuchPaddingException {
 		String calls_dir = sPref.getRootDir().getAbsolutePath() + File.separator + CALLS_DIR;
 
 		File nomedia_file = new File(calls_dir, ".nomedia");

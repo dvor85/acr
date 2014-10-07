@@ -35,7 +35,7 @@ public class SuperService extends Service {
 		try {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
-
+						
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
