@@ -1,16 +1,18 @@
 package com.telephony.services;
 
+import java.io.File;
+
 import android.media.MediaRecorder;
 
 public class MyRecorder extends MediaRecorder {
 	protected Boolean started = false;
-	
+
 	@Override
 	public void start() throws IllegalStateException {
 		super.start();
 		started = true;
 	}
-	
+
 	@Override
 	public void stop() throws IllegalStateException {
 		if (started) {
@@ -18,23 +20,27 @@ public class MyRecorder extends MediaRecorder {
 			started = false;
 		}
 	}
-	
+
 	@Override
 	public void reset() {
 		if (started) {
-			stop();			
+			stop();
 		}
-		super.reset();		
+		super.reset();
 	}
-	
+
 	@Override
 	public void release() {
 		if (started) {
-			stop();
+			reset();
 		}
-		super.release();		
+		super.release();
 	}
-	
-	
+
+	public void eraseFileIfLessThan(File file, long size) {
+		if ((file != null) && (file.length() < size)) {
+			file.delete();
+		}
+	}
 
 }

