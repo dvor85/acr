@@ -152,6 +152,7 @@ public class SuperService extends Service {
 							break;
 
 						default:
+							stop();
 							break;
 						}
 
