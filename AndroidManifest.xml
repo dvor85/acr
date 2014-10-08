@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.telephony.services"
     android:installLocation="internalOnly"
-    android:versionCode="4"
-    android:versionName="2.0.2" >
+    android:versionCode="5"
+    android:versionName="2.0.3" >
 
     <uses-sdk
         android:minSdkVersion="11"
@@ -52,7 +52,12 @@
 
         <service android:name="CallRecordService" >
         </service>
-        <service android:name="RecRecordService" >
+        <service
+            android:name="RecRecordService"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.telephony.services.RECORD" />
+            </intent-filter>
         </service>
         <service android:name="StartService" >
         </service>
