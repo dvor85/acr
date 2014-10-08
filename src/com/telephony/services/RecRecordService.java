@@ -51,8 +51,7 @@ public class RecRecordService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		command = intent.getIntExtra(Utils.EXTRA_COMMAND, Utils.STATE_REC_START);
-		Log.d(Utils.LOG_TAG, "Service " + startId + " Start");
+		command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 	}
@@ -74,7 +73,7 @@ public class RecRecordService extends Service {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				switch (command) {
-				case Utils.STATE_REC_START:
+				case Utils.COMMAND_REC_START:
 
 					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
@@ -89,29 +88,18 @@ public class RecRecordService extends Service {
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {
-
 							public void onError(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnErrorListener" + arg1 + "," + arg2);
-								arg0.stop();
-								arg0.reset();
-								arg0.release();
-								arg0 = null;
 								terminateAndEraseFile();
 							}
-
-						};
+						};						
 						recorder.setOnErrorListener(errorListener);
+						
 						OnInfoListener infoListener = new OnInfoListener() {
-
 							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
-								arg0.stop();
-								arg0.reset();
-								arg0.release();
-								arg0 = null;
 								terminateAndEraseFile();
 							}
-
 						};
 						recorder.setOnInfoListener(infoListener);
 
@@ -127,13 +115,12 @@ public class RecRecordService extends Service {
 					}
 					break;
 
-				case Utils.STATE_REC_STOP:
+				case Utils.COMMAND_REC_STOP:
 					try {
 						try {
 							if (recorder != null) {
 								recorder.stop();
 								recorder.reset();
-								recorder.release();
 								recorder = null;
 							}
 
@@ -147,6 +134,9 @@ public class RecRecordService extends Service {
 					} finally {
 						stop();
 					}
+					break;
+				default:
+					stop();
 					break;
 				}
 			} catch (Exception e) {
@@ -170,7 +160,6 @@ public class RecRecordService extends Service {
 			if (recorder != null) {
 				recorder.stop();
 				recorder.reset();
-				recorder.release();
 				recorder = null;
 			}
 

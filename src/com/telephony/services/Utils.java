@@ -35,8 +35,9 @@ public class Utils {
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
-	public static final int STATE_REC_START = 4;
-	public static final int STATE_REC_STOP = 5;
+	
+	public static final int COMMAND_REC_START = 1;
+	public static final int COMMAND_REC_STOP = 2;
 
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;

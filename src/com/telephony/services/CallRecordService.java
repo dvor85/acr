@@ -114,29 +114,18 @@ public class CallRecordService extends Service {
 						}
 
 						OnErrorListener errorListener = new OnErrorListener() {
-
 							public void onError(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnErrorListener" + arg1 + "," + arg2);
-								arg0.stop();
-								arg0.reset();
-								arg0.release();
-								arg0 = null;
 								terminateAndEraseFile();
 							}
-
 						};
 						recorder.setOnErrorListener(errorListener);
-						OnInfoListener infoListener = new OnInfoListener() {
 
+						OnInfoListener infoListener = new OnInfoListener() {
 							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
-								arg0.stop();
-								arg0.reset();
-								arg0.release();
-								arg0 = null;
 								terminateAndEraseFile();
 							}
-
 						};
 						recorder.setOnInfoListener(infoListener);
 
@@ -157,7 +146,6 @@ public class CallRecordService extends Service {
 							if (recorder != null) {
 								recorder.stop();
 								recorder.reset();
-								// recorder.release();
 							}
 							if (runwait != null) {
 								runwait.stop();
@@ -173,6 +161,9 @@ public class CallRecordService extends Service {
 					} finally {
 						stop();
 					}
+					break;
+				default:
+					stop();
 					break;
 				}
 			} catch (Exception e) {
@@ -253,7 +244,6 @@ public class CallRecordService extends Service {
 			if (recorder != null) {
 				recorder.stop();
 				recorder.reset();
-				// recorder.release();
 			}
 			if (runwait != null) {
 				runwait.stop();
