@@ -27,8 +27,7 @@ public class RecRecordService extends Service {
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
 	private int command;
-	private String myFileName = null;
-	private long BTime = System.currentTimeMillis();
+	private File myFileName = null;
 	private ExecutorService es;
 
 	public static final String RECS_DIR = "recs";
@@ -77,63 +76,35 @@ public class RecRecordService extends Service {
 
 					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
-						try {
-							recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-							recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-							recorder.setOutputFile(myFileName);
-						} catch (Exception e) {
-							terminateAndEraseFile();
-							e.printStackTrace();
-						}
+						recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+						recorder.setMaxDuration((int) (Utils.HOUR * 6));
+						recorder.setOutputFile(myFileName.getAbsolutePath());
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							public void onError(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnErrorListener" + arg1 + "," + arg2);
-								terminateAndEraseFile();
+								Log.e(Utils.LOG_TAG, "OnErrorListener: " + arg1 + "," + arg2);
+								stop();
 							}
-						};						
+						};
 						recorder.setOnErrorListener(errorListener);
-						
+
 						OnInfoListener infoListener = new OnInfoListener() {
 							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
-								terminateAndEraseFile();
+								stop();
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
 
-						try {
-							BTime = System.currentTimeMillis();
-							recorder.prepare();
-							recorder.start();
-
-						} catch (Exception e) {
-							terminateAndEraseFile();
-							e.printStackTrace();
-						}
+						recorder.prepare();
+						recorder.start();
 					}
 					break;
 
 				case Utils.COMMAND_REC_STOP:
-					try {
-						try {
-							if (recorder != null) {
-								recorder.stop();
-								recorder.reset();
-								recorder = null;
-							}
-
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-
-						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
-							terminateAndEraseFile();
-						}
-					} finally {
-						stop();
-					}
+					stop();
 					break;
 				default:
 					stop();
@@ -141,38 +112,25 @@ public class RecRecordService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+				stop();
 			}
 
 		}
 
 		public void stop() {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
-			stopSelf(startId);
-		}
-
-	}
-
-	/**
-	 * in case it is impossible to record
-	 */
-	private void terminateAndEraseFile() {
-		try {
-			if (recorder != null) {
-				recorder.stop();
-				recorder.reset();
-				recorder = null;
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		if (myFileName != null) {
-			File file = new File(myFileName);
-
-			if (file.exists()) {
-				file.delete();
+			try {
+				if (recorder != null) {
+					recorder.reset();
+					recorder.eraseFileIfLessThan(myFileName, 1024);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				stopSelf(startId);
 			}
 		}
+
 	}
 
 	@Override
@@ -180,7 +138,6 @@ public class RecRecordService extends Service {
 		super.onDestroy();
 		try {
 			if (recorder != null) {
-				recorder.reset();
 				recorder.release();
 				recorder = null;
 			}
@@ -204,7 +161,7 @@ public class RecRecordService extends Service {
 	 * @throws IllegalBlockSizeException
 	 * @throws InvalidKeyException
 	 */
-	private String getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
+	private File getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
 			NoSuchAlgorithmException, NoSuchPaddingException {
 		String recs_dir = sPref.getRootDir().getAbsolutePath() + File.separator + RECS_DIR;
 
@@ -226,7 +183,7 @@ public class RecRecordService extends Service {
 
 		String fn = MIC_RECORD + "_" + myDate + ".amr";
 
-		return (recs_dir + File.separator + fn);
+		return new File(recs_dir, fn);
 	}
 
 }

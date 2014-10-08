@@ -34,8 +34,7 @@ public class CallRecordService extends Service {
 	private String phoneNumber = null;
 	private int command;
 	private String direct = "";
-	private String myFileName = null;
-	private long BTime = System.currentTimeMillis();
+	private File myFileName = null;
 	private ExecutorService es;
 	private RunWait runwait = null;
 
@@ -60,7 +59,7 @@ public class CallRecordService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		command = intent.getIntExtra(Utils.EXTRA_COMMAND, Utils.STATE_IN_NUMBER);
+		command = intent.getIntExtra(Utils.EXTRA_COMMAND, -1);
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 	}
@@ -92,7 +91,6 @@ public class CallRecordService extends Service {
 					break;
 
 				case Utils.STATE_CALL_START:
-
 					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
 						runwait = new RunWait();
 						runwait.run();
@@ -103,20 +101,16 @@ public class CallRecordService extends Service {
 
 					if ((command == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
-						try {
-							recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
-							recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-							recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-							recorder.setOutputFile(myFileName);
-						} catch (Exception e) {
-							terminateAndEraseFile();
-							e.printStackTrace();
-						}
+						recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+						recorder.setMaxDuration((int) (Utils.HOUR * 6));
+						recorder.setOutputFile(myFileName.getAbsolutePath());
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							public void onError(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnErrorListener" + arg1 + "," + arg2);
-								terminateAndEraseFile();
+								Log.e(Utils.LOG_TAG, "OnErrorListener: " + arg1 + "," + arg2);
+								stop();
 							}
 						};
 						recorder.setOnErrorListener(errorListener);
@@ -124,43 +118,18 @@ public class CallRecordService extends Service {
 						OnInfoListener infoListener = new OnInfoListener() {
 							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
 								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
-								terminateAndEraseFile();
+								stop();
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
 
-						try {
-							BTime = System.currentTimeMillis();
-							recorder.prepare();
-							recorder.start();
-						} catch (Exception e) {
-							terminateAndEraseFile();
-							e.printStackTrace();
-						}
+						recorder.prepare();
+						recorder.start();
 					}
 					break;
 
 				case Utils.STATE_CALL_END:
-					try {
-						try {
-							if (recorder != null) {
-								recorder.stop();
-								recorder.reset();
-							}
-							if (runwait != null) {
-								runwait.stop();
-							}
-
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-
-						if ((System.currentTimeMillis() - BTime) < Utils.SECOND * 5) {
-							terminateAndEraseFile();
-						}
-					} finally {
-						stop();
-					}
+					stop();
 					break;
 				default:
 					stop();
@@ -168,13 +137,26 @@ public class CallRecordService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+				stop();
 			}
 
 		}
 
 		public void stop() {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
-			stopSelf(startId);
+			try {
+				if (recorder != null) {
+					recorder.reset();
+					recorder.eraseFileIfLessThan(myFileName, 1024);
+				}
+				if (runwait != null) {
+					runwait.stop();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {				
+				stopSelf(startId);
+			}
 		}
 
 	}
@@ -236,45 +218,22 @@ public class CallRecordService extends Service {
 		}
 	}
 
-	/**
-	 * in case it is impossible to record
-	 */
-	private void terminateAndEraseFile() {
-		try {
-			if (recorder != null) {
-				recorder.stop();
-				recorder.reset();
-			}
-			if (runwait != null) {
-				runwait.stop();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		if (myFileName != null) {
-			File file = new File(myFileName);
-
-			if (file.exists()) {
-				file.delete();
-			}
-		}
-	}
-
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 		try {
 			if (recorder != null) {
-				recorder.reset();
 				recorder.release();
 				recorder = null;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		if (runwait != null) {
+			runwait.stop();
+			runwait = null;
+		}
 		phoneNumber = null;
-		runwait = null;
 		sPref = null;
 		es = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
@@ -292,7 +251,7 @@ public class CallRecordService extends Service {
 	 * @throws IllegalBlockSizeException
 	 * @throws InvalidKeyException
 	 */
-	private String getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
+	private File getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
 			NoSuchAlgorithmException, NoSuchPaddingException {
 		String calls_dir = sPref.getRootDir().getAbsolutePath() + File.separator + CALLS_DIR;
 
@@ -314,14 +273,14 @@ public class CallRecordService extends Service {
 
 		String phoneName = Utils.getContactName(this, phoneNumber);
 
-		File file = new File(calls_dir, phoneName + File.separator + phoneNumber);
+		File dir = new File(calls_dir, phoneName + File.separator + phoneNumber);
 
-		if (!file.exists()) {
-			file.mkdirs();
+		if (!dir.exists()) {
+			dir.mkdirs();
 		}
 		String fn = direct + "_" + myDate + ".amr";
 
-		return (file.getAbsolutePath() + File.separator + fn);
+		return new File(dir.getAbsolutePath(), fn);
 	}
 
 }
