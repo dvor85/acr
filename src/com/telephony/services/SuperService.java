@@ -65,21 +65,22 @@ public class SuperService extends Service {
 
 		public void run() {
 			long rfs = -1;
-			long b;
+			long b = System.currentTimeMillis();
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
 						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
-					if (!ftp.isReady()) {
-						ftp.connect(sPref.getRemoteUrl());
+					Log.d(Utils.LOG_TAG, "time wait for internet and storage: " + (System.currentTimeMillis() - b));
+					if (!ftp.isReady()) {						
+						ftp.connect(sPref.getRemoteUrl());			
 					}
-					if (ftp.isReady()) {
+					if (ftp.isReady()) {					
 						switch (command) {
 						case Utils.COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
 							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-								upd.updateAPK();
+								upd.updateAPK();								
 							}
 							upd.free();
 							break;
@@ -87,6 +88,7 @@ public class SuperService extends Service {
 						case Utils.COMMAND_RUN_SCRIPTER:
 							scp = new Scripter(context, ftp);
 							scp.execScript();
+							Log.d(Utils.LOG_TAG, "time scripter: " + (System.currentTimeMillis() - b));
 							break;
 
 						case Utils.COMMAND_RUN_UPLOAD:
@@ -119,8 +121,7 @@ public class SuperService extends Service {
 										break;
 									}
 								}
-							}
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
+							}							
 							break;
 
 						case Utils.COMMAND_RUN_DOWNLOAD:
@@ -147,8 +148,7 @@ public class SuperService extends Service {
 										break;
 									}
 								}
-							}
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
+							}							
 							break;
 
 						default:

@@ -69,7 +69,7 @@ public class MyFTPClient extends FTPSClient {
 		}
 		
 		setConnectTimeout(10000);
-		setDefaultTimeout(20000);
+		setDefaultTimeout(10000);
 		super.connect(url.getHost(), port);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
@@ -82,7 +82,7 @@ public class MyFTPClient extends FTPSClient {
 		isAuthorized = super.login(username, password);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
-		}	
+		}		
 		
 		enterLocalPassiveMode();
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
