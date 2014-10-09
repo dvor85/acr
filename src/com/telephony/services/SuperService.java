@@ -6,12 +6,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Debug;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.SystemClock;
 import android.util.Log;
 
 public class SuperService extends Service {
@@ -23,6 +26,7 @@ public class SuperService extends Service {
 	private Updater upd = null;
 	private Scripter scp = null;
 	private int command = 0;
+	private PowerManager.WakeLock wl;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -33,13 +37,14 @@ public class SuperService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		try {
-			es = Executors.newFixedThreadPool(1);
-			sPref = PreferenceUtils.getInstance(this);
-
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		es = Executors.newFixedThreadPool(1);
+		sPref = PreferenceUtils.getInstance(this);
+		PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+		wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Utils.LOG_TAG);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -66,10 +71,11 @@ public class SuperService extends Service {
 		public void run() {
 			long rfs = -1;
 			long b = System.currentTimeMillis();
+			wl.acquire();
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+				if ((command > 0) && sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					Log.d(Utils.LOG_TAG, "time before internet wait: " + (System.currentTimeMillis() - b));
 					if (Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
 						Log.d(Utils.LOG_TAG, "time after internet wait: " + (System.currentTimeMillis() - b));
@@ -88,7 +94,7 @@ public class SuperService extends Service {
 
 							case Utils.COMMAND_RUN_SCRIPTER:
 								scp = new Scripter(context, ftp);
-								scp.execScript();								
+								scp.execScript();
 								break;
 
 							case Utils.COMMAND_RUN_UPLOAD:
@@ -152,7 +158,6 @@ public class SuperService extends Service {
 								break;
 
 							default:
-								stop();
 								break;
 							}
 
@@ -161,13 +166,14 @@ public class SuperService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				stop();
+			} finally {				
+				stop();				
 			}
 		}
 
 		public void stop() {
-			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+			wl.release();
+			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);			
 			try {
 				if (stopSelfResult(startId)) {
 					if (ftp != null) {
@@ -177,7 +183,6 @@ public class SuperService extends Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 
 	}
