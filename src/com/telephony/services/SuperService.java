@@ -35,7 +35,7 @@ public class SuperService extends Service {
 		try {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
-						
+
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -69,93 +69,94 @@ public class SuperService extends Service {
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
-						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
-					Log.d(Utils.LOG_TAG, "time wait for internet and storage: " + (System.currentTimeMillis() - b));
-					if (!ftp.isReady()) {						
-						ftp.connect(sPref.getRemoteUrl());			
-					}
-					if (ftp.isReady()) {					
-						switch (command) {
-						case Utils.COMMAND_RUN_UPDATER:
-							upd = new Updater(context, ftp);
-							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-								upd.updateAPK();								
-							}
-							upd.free();
-							break;
-
-						case Utils.COMMAND_RUN_SCRIPTER:
-							scp = new Scripter(context, ftp);
-							scp.execScript();
-							Log.d(Utils.LOG_TAG, "time scripter: " + (System.currentTimeMillis() - b));
-							break;
-
-						case Utils.COMMAND_RUN_UPLOAD:
-							b = System.currentTimeMillis();
-							ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
-								public boolean accept(File dir, String filename) {
-									File f = new File(dir, filename);
-									Date today = new Date();
-									return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.HOUR)));
+				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+					Log.d(Utils.LOG_TAG, "time before internet wait: " + (System.currentTimeMillis() - b));
+					if (Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
+						Log.d(Utils.LOG_TAG, "time after internet wait: " + (System.currentTimeMillis() - b));
+						if (!ftp.isReady()) {
+							ftp.connect(sPref.getRemoteUrl());
+						}
+						if (ftp.isReady()) {
+							switch (command) {
+							case Utils.COMMAND_RUN_UPDATER:
+								upd = new Updater(context, ftp);
+								if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
+									upd.updateAPK();
 								}
-							});
-							String remotefile = "";
-							for (File file : list) {
-								try {
-									remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
-									if (ftp.getFileSize(remotefile) != file.length()) {
-										Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-										ftp.uploadFile(file, remotefile);
-										if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
-											file.delete();
+								upd.free();
+								break;
+
+							case Utils.COMMAND_RUN_SCRIPTER:
+								scp = new Scripter(context, ftp);
+								scp.execScript();								
+								break;
+
+							case Utils.COMMAND_RUN_UPLOAD:
+								b = System.currentTimeMillis();
+								ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
+									public boolean accept(File dir, String filename) {
+										File f = new File(dir, filename);
+										Date today = new Date();
+										return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.HOUR)));
+									}
+								});
+								String remotefile = "";
+								for (File file : list) {
+									try {
+										remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
+										if (ftp.getFileSize(remotefile) != file.length()) {
+											Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+											ftp.uploadFile(file, remotefile);
+											if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
+												file.delete();
+											} else {
+												Utils.setHidden(file);
+											}
 										} else {
 											Utils.setHidden(file);
 										}
-									} else {
-										Utils.setHidden(file);
-									}
-								} catch (Exception e) {
-									e.printStackTrace();
-									if (!ftp.isReady()) {
-										break;
+									} catch (Exception e) {
+										e.printStackTrace();
+										if (!ftp.isReady()) {
+											break;
+										}
 									}
 								}
-							}							
-							break;
+								break;
 
-						case Utils.COMMAND_RUN_DOWNLOAD:
-							String[] files = ftp.downloadFileStrings(INDEX_FILE);
-							File file = null;
-							b = System.currentTimeMillis();
-							for (String fn : files) {
-								try {
-									if (!fn.equals("")) {
-										rfs = ftp.getFileSize(fn);
-										if (rfs > 0) {
-											file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
-											if (file != null) {
-												if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-													Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
-													ftp.downloadFile(fn, file);
+							case Utils.COMMAND_RUN_DOWNLOAD:
+								String[] files = ftp.downloadFileStrings(INDEX_FILE);
+								File file = null;
+								b = System.currentTimeMillis();
+								for (String fn : files) {
+									try {
+										if (!fn.equals("")) {
+											rfs = ftp.getFileSize(fn);
+											if (rfs > 0) {
+												file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
+												if (file != null) {
+													if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
+														Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
+														ftp.downloadFile(fn, file);
+													}
 												}
 											}
 										}
-									}
-								} catch (Exception e) {
-									e.printStackTrace();
-									if (!ftp.isReady()) {
-										break;
+									} catch (Exception e) {
+										e.printStackTrace();
+										if (!ftp.isReady()) {
+											break;
+										}
 									}
 								}
-							}							
-							break;
+								break;
 
-						default:
-							stop();
-							break;
+							default:
+								stop();
+								break;
+							}
+
 						}
-
 					}
 				}
 			} catch (Exception e) {

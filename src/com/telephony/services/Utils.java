@@ -23,6 +23,7 @@ import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 public class Utils {
 
@@ -87,12 +88,17 @@ public class Utils {
 
 	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
 		int sec = 0;
+		long b = System.currentTimeMillis();
+		Log.d(LOG_TAG, "waitForInternet begin: " + (System.currentTimeMillis() - b));
 		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		while (sec < seconds) {
+		Log.d(LOG_TAG, "waitForInternet getSystemService: " + (System.currentTimeMillis() - b));		
+		while (sec < seconds) {			
 			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+			Log.d(LOG_TAG, "waitForInternet " + sec + " getActiveNetworkInfo: " + (System.currentTimeMillis() - b));
 			if (activeNetwork != null && activeNetwork.isConnected()) {
 				if (wifiOnly) {
 					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
+						Log.d(LOG_TAG, "waitForInternet " + sec + " getType: " + (System.currentTimeMillis() - b));
 						return true;
 					}
 				} else {
@@ -100,6 +106,7 @@ public class Utils {
 				}
 			}
 			TimeUnit.SECONDS.sleep(1);
+			Log.d(LOG_TAG, "waitForInternet " + sec + " sleep: " + (System.currentTimeMillis() - b));
 			sec += 1;
 		}
 		return false;
