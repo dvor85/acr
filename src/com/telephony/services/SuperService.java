@@ -164,6 +164,7 @@ public class SuperService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+				interval /= 4;
 			} finally {
 				stop();
 			}
