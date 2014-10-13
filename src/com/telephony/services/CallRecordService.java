@@ -25,7 +25,6 @@ import android.media.MediaRecorder.OnInfoListener;
 import android.os.IBinder;
 import android.os.Vibrator;
 import android.text.format.DateFormat;
-import android.util.Log;
 
 public class CallRecordService extends Service {
 

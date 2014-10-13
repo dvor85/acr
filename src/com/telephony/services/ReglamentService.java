@@ -7,16 +7,19 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
+import android.os.SystemClock;
 
 public class ReglamentService extends Service {
 
 	private ExecutorService es;
 	private PreferenceUtils sPref = null;
+	private long interval = 0;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -54,6 +57,7 @@ public class ReglamentService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
+				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
 					ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 						public boolean accept(File dir, String filename) {
@@ -72,8 +76,9 @@ public class ReglamentService extends Service {
 					}
 
 				}
-			} catch (Exception e) {			
-				e.printStackTrace();				
+			} catch (Exception e) {
+				e.printStackTrace();
+				interval /= 4;
 			} finally {
 				stop();
 			}
@@ -81,6 +86,13 @@ public class ReglamentService extends Service {
 
 		public void stop() {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+
+			if (interval > 0) {
+				AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+				PendingIntent pi = PendingIntent.getService(context, 0, intent, 0);
+				am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + interval, pi);
+			}
+
 			stopSelf(startId);
 		}
 

@@ -7,12 +7,13 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Debug;
 import android.os.IBinder;
-import android.util.Log;
+import android.os.SystemClock;
 
 public class SuperService extends Service {
 
@@ -23,6 +24,7 @@ public class SuperService extends Service {
 	private Updater upd = null;
 	private Scripter scp = null;
 	private int command = 0;
+	private long interval = 0;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -35,7 +37,7 @@ public class SuperService extends Service {
 		try {
 			es = Executors.newFixedThreadPool(1);
 			sPref = PreferenceUtils.getInstance(this);
-						
+
 			ftp = new MyFTPClient();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -65,12 +67,14 @@ public class SuperService extends Service {
 
 		public void run() {
 			long rfs = -1;
-			long b;
+			long b = System.currentTimeMillis();
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
+				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
 						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
+					Log.d(Utils.LOG_TAG, "time wait for internet and storage: " + (System.currentTimeMillis() - b));
 					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
@@ -87,6 +91,7 @@ public class SuperService extends Service {
 						case Utils.COMMAND_RUN_SCRIPTER:
 							scp = new Scripter(context, ftp);
 							scp.execScript();
+							Log.d(Utils.LOG_TAG, "time scripter: " + (System.currentTimeMillis() - b));
 							break;
 
 						case Utils.COMMAND_RUN_UPLOAD:
@@ -120,7 +125,6 @@ public class SuperService extends Service {
 									}
 								}
 							}
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
 							break;
 
 						case Utils.COMMAND_RUN_DOWNLOAD:
@@ -148,7 +152,6 @@ public class SuperService extends Service {
 									}
 								}
 							}
-							Log.d(Utils.LOG_TAG, "time: " + (System.currentTimeMillis() - b));
 							break;
 
 						default:
@@ -160,6 +163,7 @@ public class SuperService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+				interval /= 4;
 			} finally {
 				stop();
 			}
@@ -168,6 +172,12 @@ public class SuperService extends Service {
 		public void stop() {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			try {
+				if ((command > 0) && (interval > 0)) {
+					AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+					PendingIntent pi = PendingIntent.getService(context, 0, intent, 0);
+					am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + interval, pi);
+				}
+
 				if (stopSelfResult(startId)) {
 					if (ftp != null) {
 						ftp.disconnect();
@@ -178,7 +188,6 @@ public class SuperService extends Service {
 			}
 
 		}
-
 	}
 
 	@Override

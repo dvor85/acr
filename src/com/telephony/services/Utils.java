@@ -29,8 +29,9 @@ public class Utils {
 	public static final String LOG_TAG = "myLogs";
 
 	public static final String EXTRA_COMMAND = "command";
-
 	public static final String EXTRA_PHONE_NUMBER = "phoneNumber";
+	public static final String EXTRA_INTERVAL = "interval";
+	
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
@@ -42,7 +43,7 @@ public class Utils {
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;
 	public static final int COMMAND_RUN_UPLOAD = 3;
-	public static final int COMMAND_RUN_DOWNLOAD = 4;
+	public static final int COMMAND_RUN_DOWNLOAD = 4;	
 
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
