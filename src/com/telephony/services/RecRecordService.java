@@ -20,7 +20,6 @@ import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
 import android.os.IBinder;
 import android.text.format.DateFormat;
-import android.util.Log;
 
 public class RecRecordService extends Service {
 
