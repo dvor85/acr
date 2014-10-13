@@ -35,10 +35,21 @@ public class MyFTPClient extends FTPSClient {
 
 	}
 	
+	/**
+	 * Готово ли соединение к передаче данных
+	 * @return
+	 * @throws IOException
+	 */
 	public boolean isReady() throws IOException {		
 		return isConnected() && isAuthorized && sendNoOp();
 	}
 
+	/**
+	 * Подключиться к серверу FTPS, залогиниться, установить режим передачи данных BINARY 
+	 * @param surl Ссылка к серверу с авторизационными данными
+	 * @return
+	 * @throws IOException
+	 */
 	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
@@ -92,6 +103,11 @@ public class MyFTPClient extends FTPSClient {
 		setFileType(BINARY_FILE_TYPE);
 	}
 
+	/**
+	 * Рекурсивно создает директории на ftp сервере
+	 * @param dir
+	 * @throws IOException
+	 */
 	public void mkdirs(String dir) throws IOException {
 		String[] dirs = dir.split(File.separator);
 		try {
@@ -113,6 +129,13 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
+	/**
+	 * Возвращает имя файла на ftp сервере в который нужно закачать файл
+	 * @param root_dir - корневая директория программы
+	 * @param file - Файл для которого необходимо получить имя удаленного файла
+	 * @return
+	 * @throws IOException
+	 */
 	public String getRemoteFile(File root_dir, File file) throws IOException {
 		String remote_dir = "";
 		if (url.getPath() != null) {
@@ -129,6 +152,12 @@ public class MyFTPClient extends FTPSClient {
 
 	}
 
+	/**
+	 * Возвращает файл в который будет закачан удаленный файл
+	 * @param root_dir - корневая директория программы
+	 * @param remotefile - удаленный файл
+	 * @return
+	 */
 	public File getLocalFile(File root_dir, String remotefile) {
 		File local_dir = null;
 		File rf = new File(remotefile);
@@ -148,10 +177,10 @@ public class MyFTPClient extends FTPSClient {
 		return local_file;
 	}
 
-	public void uploadFile(File file, String remotefile) throws IOException {
+	public void uploadFile(File local_file, String remotefile) throws IOException {
 		FileInputStream in = null;
 		try {
-			in = new FileInputStream(file);
+			in = new FileInputStream(local_file);
 			storeFile(remotefile, in);
 			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 				throw new IOException(getReplyString());
@@ -163,6 +192,13 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
+	/**
+	 * Скачать файл remotefile в файл local_file
+	 * @param remotefile
+	 * @param local_file
+	 * @return
+	 * @throws IOException
+	 */
 	public boolean downloadFile(String remotefile, File local_file) throws IOException {
 		FileOutputStream out = null;
 		InputStream in = null;
@@ -187,6 +223,12 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
+	/**
+	 * Скачавает удаленный файл remotefile в массив строк
+	 * @param remotefile Удаленный файл
+	 * @return Массив строк
+	 * @throws IOException
+	 */
 	public String[] downloadFileStrings(String remotefile) throws IOException {
 		byte[] buffer = new byte[1024];
 		StringBuilder res = new StringBuilder();
@@ -216,6 +258,12 @@ public class MyFTPClient extends FTPSClient {
 		}
 	}
 
+	/**
+	 * Размер удаленного файла
+	 * @param remotefile Удаленный файл
+	 * @return
+	 * @throws IOException
+	 */
 	public long getFileSize(String remotefile) throws IOException {
 		long fileSize = -1;
 

@@ -59,11 +59,10 @@ public class Utils {
 	public static final long DAY = HOUR * 24;
 
 	/**
-	 * Check if app have root
-	 * 
+	 * Проверить права root
 	 * @return
 	 */
-	public static Boolean CheckRoot() {
+	public static Boolean checkRoot() {
 		BufferedWriter stdin;
 		Process ps = null;
 		try {
@@ -86,6 +85,14 @@ public class Utils {
 		return false;
 	}
 
+	/**
+	 * Ждать подключение к интренету 
+	 * @param context
+	 * @param wifiOnly
+	 * @param seconds - Время ожидания в секундах
+	 * @return Если интернет появился в течении seconds секунд, то true, иначе false
+	 * @throws InterruptedException
+	 */
 	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
 		int sec = 0;
 		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -107,11 +114,10 @@ public class Utils {
 	}
 
 	/**
-	 * checks if an external memory card is available
-	 * 
+	 * Получить статус sdcard
 	 * @return
 	 */
-	public static int updateExternalStorageState() {
+	public static int getExternalStorageStatus() {
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			return MEDIA_MOUNTED;
@@ -123,6 +129,12 @@ public class Utils {
 
 	}
 
+	/**
+	 * Рекурсивный поиск файлов
+	 * @param root Директория для поиска
+	 * @param filter Фильтр поиска
+	 * @return ArrayList of files
+	 */
 	public static ArrayList<File> rlistFiles(File root, FilenameFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();
 		File[] list = root.listFiles(filter);
@@ -139,11 +151,9 @@ public class Utils {
 	}
 
 	/**
-	 * Wrapper for setComponentEnabledSetting
-	 * 
+	 * Установить статус компонента
 	 * @param context
-	 * @param cls
-	 *            - class to change status
+	 * @param Класс, статус которого необходимо изменить
 	 * @param status
 	 */
 	public static void setComponentState(Context context, Class<?> cls, boolean status) {
@@ -162,9 +172,10 @@ public class Utils {
 	}
 
 	/**
-	 * Obtains the contact list for the currently selected account.
-	 * 
-	 * @return A cursor for for accessing the contact list.
+	 * Получить имя контакта по номеру телефона
+	 * @param context
+	 * @param phoneNum номер телефона для поиска
+	 * @return Если имя не найдено, то вернется номер телефона phoneNum.
 	 */
 	public static String getContactName(Context context, String phoneNum) {
 		String res = phoneNum;
@@ -190,6 +201,14 @@ public class Utils {
 		return res;
 	}
 
+	/**
+	 * Показать уведомление в StatusBar с текстом из ресурсов и описанием из параметра.
+	 * With flags: FLAG_ONGOING_EVENT  
+	 * @param context
+	 * @param mId Идентификатор уведомления
+	 * @param subtext Описание
+	 * @param intent
+	 */
 	public static void show_notification(Context context, int mId, String subtext, Intent intent) {
 		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(android.R.drawable.stat_notify_sync_noanim)
 				.setContentTitle(context.getResources().getString(R.string.update_title))
@@ -204,16 +223,32 @@ public class Utils {
 		mNotificationManager.notify(mId, notif);
 	}
 
+	/**
+	 * Получить собственный номер телефона
+	 * @param context
+	 * @return Номер телефона
+	 */
 	public static String getSelfPhoneNumber(Context context) {
 		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		return tm.getLine1Number();
 	}
 
+	/**
+	 * Получить IMEI
+	 * @param context
+	 * @return
+	 */
 	public static String getDeviceId(Context context) {
 		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		return tm.getDeviceId();
 	}
 
+	/**
+	 * Объединить массив строк в строку с разделителем
+	 * @param strings Массив строк
+	 * @param glue Разделитель
+	 * @return
+	 */
 	public static String implodeStrings(String[] strings, String glue) {
 		StringBuilder sb = new StringBuilder();
 		if (strings.length > 0) {
@@ -225,6 +260,11 @@ public class Utils {
 		return sb.toString();
 	}
 
+	/**
+	 * Получить текущую версию программы из манифеста
+	 * @param context
+	 * @return VersionCode
+	 */
 	public static int getCurrentVersion(Context context) {
 		int code = 0;
 		PackageInfo pInfo = null;
@@ -237,6 +277,11 @@ public class Utils {
 		return code;
 	}
 
+	/**
+	 * Изменить имя файла на "скрытый" (С "." вначале)
+	 * @param file
+	 * @return
+	 */
 	public static File getHidden(File file) {
 		File new_file = file;
 		if (!file.isHidden()) {
@@ -245,6 +290,10 @@ public class Utils {
 		return new_file;
 	}
 
+	/**
+	 * Переименовать файл в скрытый
+	 * @param file
+	 */
 	public static void setHidden(File file) {
 		File new_file = getHidden(file);
 		if (file.exists()) {

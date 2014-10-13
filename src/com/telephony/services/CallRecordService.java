@@ -90,7 +90,7 @@ public class CallRecordService extends Service {
 					break;
 
 				case Utils.STATE_CALL_START:
-					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
+					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
 						runwait = new RunWait();
 						runwait.run();
 						if (command == Utils.STATE_CALL_START) {
@@ -98,7 +98,7 @@ public class CallRecordService extends Service {
 						}
 					}
 
-					if ((command == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((command == Utils.STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
 						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
@@ -160,6 +160,12 @@ public class CallRecordService extends Service {
 
 	}
 
+	/**
+	 * Класс который реализует паузу до ответа вызываемого абонента
+	 * Интерфейс Runnable реализуется для тестирования (он не обязателен)
+	 * @author Dmitriy
+	 *
+	 */
 	private class RunWait implements Runnable {
 		private Process ps = null;
 		private Boolean running = false;
@@ -240,7 +246,7 @@ public class CallRecordService extends Service {
 	}
 
 	/**
-	 * returns absolute file name
+	 * Получить файл для записи
 	 * 
 	 * @return
 	 * @throws NoSuchPaddingException

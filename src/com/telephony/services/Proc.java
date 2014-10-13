@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 
 /**
- * Class for kill pid using shell
+ * Class for managing process
  * 
  * @author Dmitriy
  *
@@ -16,13 +16,16 @@ public class Proc {
 	protected String ppid;
 
 	/**
-	 * @param shell
-	 *            - sh or su
+	 * @param shell sh or su
 	 */
 	public Proc(String shell) {
 		this.shell = shell;
 	}
 
+	/**
+	 * Корректное завершение процесса и обнуление ссылки
+	 * @param ps
+	 */
 	public static void processDestroy(Process ps) {
 		try {
 			if (ps != null) {
@@ -35,6 +38,12 @@ public class Proc {
 		}
 	}
 
+	/**
+	 * Выполняет команды из массива cmds
+	 * @param cmds массив команд
+	 * @return Возвращает вывод stdout и stderr в массив строк
+	 * @throws IOException
+	 */
 	public String[] exec(String[] cmds) throws IOException {
 		byte[] buffer = new byte[1024];
 		Process ps = null;
@@ -69,15 +78,12 @@ public class Proc {
 	}
 
 	/**
-	 * Recursive search pid with ppid as parent
-	 * 
-	 * @param ppid
-	 *            - parent pid
+	 * Рекурсивный поиск всех дочерних процессов 
+	 * @param ppid parent pid
 	 * @return pids with space as separator
 	 * @throws IOException
 	 */
-	public String getChilds(String ppid) throws IOException {
-		// рекурсивный поиск всех дочерних процессов
+	public String getChilds(String ppid) throws IOException {		
 		String[] psinfo, ps;
 		StringBuilder sb = new StringBuilder();
 
@@ -93,23 +99,17 @@ public class Proc {
 	}
 
 	/**
-	 * Kill tree of pids
-	 * 
-	 * @param ppid
-	 *            - parent pid
+	 * Убивает дерево процессов
+	 * @param ppid parent pid
 	 * @throws IOException
 	 */
-	public void killTree(String ppid) throws IOException {
-		// убить процесс и все дочерние процессы
-		// делать это с правами запущенного процесса. Process.destroy
-		// убивает только с пользовательскими правами ???
+	public void killTree(String ppid) throws IOException {		
 		String cpid = getChilds(ppid);
 		exec(new String[] { "kill -9 " + ppid + " " + cpid });
 	}
 
 	/**
-	 * Kill one proc by pid
-	 * 
+	 * Убить один процесс
 	 * @param pid
 	 * @throws IOException
 	 */

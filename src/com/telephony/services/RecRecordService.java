@@ -73,7 +73,7 @@ public class RecRecordService extends Service {
 				switch (command) {
 				case Utils.COMMAND_REC_START:
 
-					if ((Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
@@ -150,8 +150,7 @@ public class RecRecordService extends Service {
 	}
 
 	/**
-	 * returns absolute file name
-	 * 
+	 * Получить файл для записи
 	 * @return
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException

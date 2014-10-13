@@ -28,10 +28,10 @@ class Crypter {
 	}
 
 	/**
-	 * Функция шифровнаия
+	 * Функция шифрования
 	 * 
-	 * @param str
-	 *            строка открытого текста
+	 * @param str Строка открытого текста
+	 * @param key Ключевая фраза
 	 * @return зашифрованная строка в формате Base64
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
@@ -53,8 +53,8 @@ class Crypter {
 	/**	
 	 * Функция расшифрования
 	 * 
-	 * @param str
-	 *            зашифрованная строка в формате Base64
+	 * @param str Зашифрованная строка в формате Base64
+	 * @param key Ключевая фраза
 	 * @return расшифрованная строка
 	 * @throws UnsupportedEncodingException
 	 * @throws BadPaddingException

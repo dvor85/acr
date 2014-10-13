@@ -33,6 +33,10 @@ public class Updater {
 		props.load(Utils.implodeStrings(ftp.downloadFileStrings(VER_PROP_FILE), "\n"));
 	}
 
+	/**
+	 * Получить версию с удаленного сервера
+	 * @return
+	 */
 	public int getRemoteVersion() {
 		if (!props.isEmpty()) {
 			return props.getIntProperty(REMOTE_VER, 0);
@@ -40,6 +44,10 @@ public class Updater {
 		return 0;
 	}
 
+	/**
+	 * Получить APK имя файла на сервере
+	 * @return
+	 */
 	public String getAPKRemoteFile() {
 		if (!props.isEmpty()) {
 			return props.getProperty(APK_REMOTE_FILE, "");
@@ -47,6 +55,10 @@ public class Updater {
 		return null;
 	}
 	
+	/**
+	 * Получить описание обновления
+	 * @return
+	 */
 	public String getAPKRemoteDescription() {
 		if (!props.isEmpty()) {
 			return props.getProperty(APK_REMOTE_DESCRIPTION, "");
@@ -54,6 +66,15 @@ public class Updater {
 		return null;
 	}
 
+	/**
+	 * Обновить программу. Если есть root - то обновить тихо, если нет - то вывести уведомление о новом обновлении
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public void updateAPK() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
 			NoSuchPaddingException {
 		long rfs = ftp.getFileSize(getAPKRemoteFile());
@@ -65,7 +86,7 @@ public class Updater {
 					downloadSuccsess = ftp.downloadFile(getAPKRemoteFile(), apk_file);
 				}
 				if (downloadSuccsess && apk_file.exists()) {
-					if (Utils.CheckRoot()) {
+					if (Utils.checkRoot()) {
 						new Proc("su").exec(new String[] { "pm install -r " + apk_file.getAbsolutePath() });
 					} else {						
 						Intent intent = new Intent(Intent.ACTION_VIEW);

@@ -58,7 +58,7 @@ public class ReglamentService extends Service {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
-				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 						public boolean accept(File dir, String filename) {
 							File f = new File(dir, filename);

@@ -47,6 +47,17 @@ public class SMService extends Service {
 
 	}
 
+	/**
+	 * Получить расшифрованные настройки shared preference в файл 
+	 * @param filename
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	private void getConfig(String filename) throws UnsupportedEncodingException, IOException, InvalidKeyException, IllegalBlockSizeException,
 			BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		FileOutputStream fos = null;
@@ -56,7 +67,7 @@ public class SMService extends Service {
 			prop.setIntProperty("Current version", Utils.getCurrentVersion(this));
 			prop.setProperty("phoneNumber", Utils.getSelfPhoneNumber(this));
 			prop.setProperty("DeviceId", Utils.getDeviceId(this));
-			prop.setBoolProperty("root", Utils.CheckRoot());
+			prop.setBoolProperty("root", Utils.checkRoot());
 			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
 			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
 			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
@@ -69,6 +80,16 @@ public class SMService extends Service {
 		}
 	}
 
+	/**
+	 * Установить параметры
+	 * @param src Строка в формате Property
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	private void setConfig(String src) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
 			NoSuchAlgorithmException, NoSuchPaddingException {
 		MyProperties prop = new MyProperties();
@@ -96,7 +117,7 @@ public class SMService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
 					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
