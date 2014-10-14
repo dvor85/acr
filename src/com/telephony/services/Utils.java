@@ -4,6 +4,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -299,6 +302,19 @@ public class Utils {
 		if (file.exists()) {
 			file.renameTo(new_file);
 		}
+	}
+	
+	public static void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException, NoSuchMethodException, InvocationTargetException {
+	    final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+	    final Class conmanClass = Class.forName(conman.getClass().getName());
+	    final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+	    iConnectivityManagerField.setAccessible(true);
+	    final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+	    final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+	    final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
+	    setMobileDataEnabledMethod.setAccessible(true);
+
+	    setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
 	}
 	
 	
