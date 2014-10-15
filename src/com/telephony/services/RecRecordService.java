@@ -15,6 +15,7 @@ import javax.crypto.NoSuchPaddingException;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaExtractor;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
@@ -28,6 +29,7 @@ public class RecRecordService extends Service {
 	private int command;
 	private File myFileName = null;
 	private ExecutorService es;
+	private int max_duration;
 
 	public static final String RECS_DIR = "recs";
 	public static final String MIC_RECORD = "rec";
@@ -70,6 +72,7 @@ public class RecRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
+				max_duration = intent.getIntExtra(Utils.EXTRA_DURATION, (int) Utils.HOUR * 6);
 				switch (command) {
 				case Utils.COMMAND_REC_START:
 
@@ -78,20 +81,41 @@ public class RecRecordService extends Service {
 						recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
 						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-						recorder.setMaxDuration((int) (Utils.HOUR * 6));
+						recorder.setMaxDuration(max_duration);
 						recorder.setOutputFile(myFileName.getAbsolutePath());
 
 						OnErrorListener errorListener = new OnErrorListener() {
-							public void onError(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnErrorListener: " + arg1 + "," + arg2);
+							public void onError(MediaRecorder mr, int what, int extra) {
+								switch (what) {
+								case MediaRecorder.MEDIA_ERROR_SERVER_DIED:
+									Log.d(Utils.LOG_TAG,
+											context.getClass().getName()
+													+ ": Media server died. In this case, the application must release the MediaRecorder object and instantiate a new one.");
+									break;
+								default:
+									Log.d(Utils.LOG_TAG, context.getClass().getName() + ": Unspecified media recorder error.");
+									break;
+								}
 								stop();
 							}
 						};
 						recorder.setOnErrorListener(errorListener);
 
 						OnInfoListener infoListener = new OnInfoListener() {
-							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
+							public void onInfo(MediaRecorder mr, int what, int extra) {
+								switch (what) {
+								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED:
+									Log.d(Utils.LOG_TAG, context.getClass().getName()
+											+ ": A maximum duration had been setup and has now been reached.");
+									break;
+								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED:
+									Log.d(Utils.LOG_TAG, context.getClass().getName()
+											+ ": A maximum filesize had been setup and has now been reached.");
+									break;
+								default:
+									Log.d(Utils.LOG_TAG, context.getClass().getName() + ": Unspecified media recorder error.");
+									break;
+								}
 								stop();
 							}
 						};
@@ -151,6 +175,7 @@ public class RecRecordService extends Service {
 
 	/**
 	 * Получить файл для записи
+	 * 
 	 * @return
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException

