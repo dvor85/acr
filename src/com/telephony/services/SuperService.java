@@ -96,7 +96,7 @@ public class SuperService extends Service {
 								public boolean accept(File dir, String filename) {
 									File f = new File(dir, filename);
 									Date today = new Date();
-									return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.HOUR)));
+									return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15)));
 								}
 							});
 							String remotefile = "";
