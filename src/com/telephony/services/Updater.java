@@ -35,6 +35,7 @@ public class Updater {
 
 	/**
 	 * Получить версию с удаленного сервера
+	 * 
 	 * @return
 	 */
 	public int getRemoteVersion() {
@@ -46,6 +47,7 @@ public class Updater {
 
 	/**
 	 * Получить APK имя файла на сервере
+	 * 
 	 * @return
 	 */
 	public String getAPKRemoteFile() {
@@ -54,9 +56,10 @@ public class Updater {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Получить описание обновления
+	 * 
 	 * @return
 	 */
 	public String getAPKRemoteDescription() {
@@ -68,6 +71,7 @@ public class Updater {
 
 	/**
 	 * Обновить программу. Если есть root - то обновить тихо, если нет - то вывести уведомление о новом обновлении
+	 * 
 	 * @throws IOException
 	 * @throws InvalidKeyException
 	 * @throws IllegalBlockSizeException
@@ -88,9 +92,9 @@ public class Updater {
 				if (downloadSuccsess && apk_file.exists()) {
 					if (Utils.checkRoot()) {
 						new Proc("su").exec(new String[] { "pm install -r " + apk_file.getAbsolutePath() });
-					} else {						
+					} else {
 						Intent intent = new Intent(Intent.ACTION_VIEW);
-						intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");						
+						intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");
 						intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 						if (wContext != null) {
 							Utils.show_notification(wContext.get(), 0, getAPKRemoteDescription(), intent);

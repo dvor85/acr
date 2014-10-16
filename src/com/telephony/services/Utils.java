@@ -2,8 +2,11 @@ package com.telephony.services;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -54,7 +57,6 @@ public class Utils {
 	public static final int NO_MEDIA = 2;
 
 	public static final String EXTRA_SMS_BODY = "sms_body";
-	public static final String SMS_KEY_EXEC = "exec";
 	public static final String IDENT_SMS = "#com.telephony.services";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
@@ -98,8 +100,7 @@ public class Utils {
 	 * @param wifiOnly
 	 * @param seconds
 	 *            - Время ожидания в секундах
-	 * @return Если интернет появился в течении seconds секунд, то true, иначе
-	 *         false
+	 * @return Если интернет появился в течении seconds секунд, то true, иначе false
 	 * @throws InterruptedException
 	 */
 	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
@@ -219,8 +220,7 @@ public class Utils {
 	}
 
 	/**
-	 * Показать уведомление в StatusBar с текстом из ресурсов и описанием из
-	 * параметра. With flags: FLAG_ONGOING_EVENT
+	 * Показать уведомление в StatusBar с текстом из ресурсов и описанием из параметра. With flags: FLAG_ONGOING_EVENT
 	 * 
 	 * @param context
 	 * @param mId
@@ -318,6 +318,20 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * Устанавливает состояние мобильного интернета. Работает не на всех версиях и устройствах.
+	 * 
+	 * @param context
+	 *            Контекст
+	 * @param enabled
+	 *            Состояние true - включить иначе выключить
+	 * @throws ClassNotFoundException
+	 * @throws NoSuchFieldException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 */
 	public static void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException,
 			IllegalAccessException, IllegalArgumentException, NoSuchMethodException, InvocationTargetException {
 		final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -330,6 +344,28 @@ public class Utils {
 		setMobileDataEnabledMethod.setAccessible(true);
 
 		setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
+	}
+
+	/**
+	 * Записать строку в файл
+	 * 
+	 * @param file
+	 *            Файл, в который будет записана строка
+	 * @param input
+	 *            Строка для записи
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	public static void writeFile(File file, String input) throws UnsupportedEncodingException, IOException {
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(file);
+			fos.write(input.getBytes("UTF8"));
+		} finally {
+			if (fos != null) {
+				fos.close();
+			}
+		}
 	}
 
 }

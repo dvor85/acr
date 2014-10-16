@@ -66,13 +66,13 @@ public class SuperService extends Service {
 		}
 
 		public void run() {
-			long rfs = -1;			
+			long rfs = -1;
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
-						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {					
+						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
 					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
@@ -88,10 +88,10 @@ public class SuperService extends Service {
 
 						case Utils.COMMAND_RUN_SCRIPTER:
 							scp = new Scripter(context, ftp);
-							scp.execScript();							
+							scp.execScript();
 							break;
 
-						case Utils.COMMAND_RUN_UPLOAD:							
+						case Utils.COMMAND_RUN_UPLOAD:
 							ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
 								public boolean accept(File dir, String filename) {
 									File f = new File(dir, filename);
@@ -125,7 +125,7 @@ public class SuperService extends Service {
 
 						case Utils.COMMAND_RUN_DOWNLOAD:
 							String[] files = ftp.downloadFileStrings(INDEX_FILE);
-							File file = null;							
+							File file = null;
 							for (String fn : files) {
 								try {
 									if (!fn.equals("")) {

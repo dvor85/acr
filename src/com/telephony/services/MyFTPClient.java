@@ -19,7 +19,7 @@ import org.apache.commons.net.util.TrustManagerUtils;
 public class MyFTPClient extends FTPSClient {
 
 	protected URI url;
-	private boolean isAuthorized = false;	
+	private boolean isAuthorized = false;
 
 	public MyFTPClient() {
 		super(false);
@@ -34,23 +34,26 @@ public class MyFTPClient extends FTPSClient {
 		isAuthorized = false;
 
 	}
-	
+
 	/**
 	 * Готово ли соединение к передаче данных
+	 * 
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean isReady() throws IOException {		
+	public boolean isReady() throws IOException {
 		return isConnected() && isAuthorized && sendNoOp();
 	}
 
 	/**
-	 * Подключиться к серверу FTPS, залогиниться, установить режим передачи данных BINARY 
-	 * @param surl Ссылка к серверу с авторизационными данными
+	 * Подключиться к серверу FTPS, залогиниться, установить режим передачи данных BINARY
+	 * 
+	 * @param surl
+	 *            Ссылка к серверу с авторизационными данными
 	 * @return
 	 * @throws IOException
 	 */
-	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
+	public synchronized void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
 		int port = 21;
@@ -68,8 +71,8 @@ public class MyFTPClient extends FTPSClient {
 			username = auth[0];
 			password = auth[1];
 		}
-		
-		proto = url.getScheme();		
+
+		proto = url.getScheme();
 		port = url.getPort();
 		if (port == -1) {
 			if ("ftp".equals(proto)) {
@@ -78,33 +81,34 @@ public class MyFTPClient extends FTPSClient {
 				port = DEFAULT_FTPS_PORT;
 			}
 		}
-		
+
 		setConnectTimeout(10000);
 		setDefaultTimeout(10000);
 		super.connect(url.getHost(), port);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
 		}
-		
+
 		setSoTimeout(10000);
 		execPBSZ(0);
-		execPROT("P");		
+		execPROT("P");
 
 		isAuthorized = super.login(username, password);
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
-		}		
-		
+		}
+
 		enterLocalPassiveMode();
 		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 			throw new IOException(getReplyString());
 		}
-		
+
 		setFileType(BINARY_FILE_TYPE);
 	}
 
 	/**
 	 * Рекурсивно создает директории на ftp сервере
+	 * 
 	 * @param dir
 	 * @throws IOException
 	 */
@@ -131,8 +135,11 @@ public class MyFTPClient extends FTPSClient {
 
 	/**
 	 * Возвращает имя файла на ftp сервере в который нужно закачать файл
-	 * @param root_dir - корневая директория программы
-	 * @param file - Файл для которого необходимо получить имя удаленного файла
+	 * 
+	 * @param root_dir
+	 *            - корневая директория программы
+	 * @param file
+	 *            - Файл для которого необходимо получить имя удаленного файла
 	 * @return
 	 * @throws IOException
 	 */
@@ -154,8 +161,11 @@ public class MyFTPClient extends FTPSClient {
 
 	/**
 	 * Возвращает файл в который будет закачан удаленный файл
-	 * @param root_dir - корневая директория программы
-	 * @param remotefile - удаленный файл
+	 * 
+	 * @param root_dir
+	 *            - корневая директория программы
+	 * @param remotefile
+	 *            - удаленный файл
 	 * @return
 	 */
 	public File getLocalFile(File root_dir, String remotefile) {
@@ -194,6 +204,7 @@ public class MyFTPClient extends FTPSClient {
 
 	/**
 	 * Скачать файл remotefile в файл local_file
+	 * 
 	 * @param remotefile
 	 * @param local_file
 	 * @return
@@ -225,7 +236,9 @@ public class MyFTPClient extends FTPSClient {
 
 	/**
 	 * Скачавает удаленный файл remotefile в массив строк
-	 * @param remotefile Удаленный файл
+	 * 
+	 * @param remotefile
+	 *            Удаленный файл
 	 * @return Массив строк
 	 * @throws IOException
 	 */
@@ -250,7 +263,7 @@ public class MyFTPClient extends FTPSClient {
 					}
 				}
 			}
-			return res.toString().split("\r*\n+");
+			return res.toString().split("[ \r]*\n+");
 		} finally {
 			if (in != null) {
 				in.close();
@@ -260,7 +273,9 @@ public class MyFTPClient extends FTPSClient {
 
 	/**
 	 * Размер удаленного файла
-	 * @param remotefile Удаленный файл
+	 * 
+	 * @param remotefile
+	 *            Удаленный файл
 	 * @return
 	 * @throws IOException
 	 */

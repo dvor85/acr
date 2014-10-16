@@ -15,7 +15,6 @@ import javax.crypto.NoSuchPaddingException;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.media.MediaExtractor;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;

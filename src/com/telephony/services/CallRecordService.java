@@ -174,7 +174,7 @@ public class CallRecordService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {				
+			} finally {
 				stopSelf(startId);
 			}
 		}
@@ -182,10 +182,9 @@ public class CallRecordService extends Service {
 	}
 
 	/**
-	 * Класс который реализует паузу до ответа вызываемого абонента
-	 * Интерфейс Runnable реализуется для тестирования (он не обязателен)
+	 * Класс который реализует паузу до ответа вызываемого абонента Интерфейс Runnable реализуется для тестирования (он не обязателен)
+	 * 
 	 * @author Dmitriy
-	 *
 	 */
 	private class RunWait implements Runnable {
 		private Process ps = null;

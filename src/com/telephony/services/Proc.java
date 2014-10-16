@@ -9,14 +9,14 @@ import java.io.OutputStreamWriter;
  * Class for managing process
  * 
  * @author Dmitriy
- *
  */
 public class Proc {
 	private String shell;
 	protected String ppid;
 
 	/**
-	 * @param shell sh or su
+	 * @param shell
+	 *            sh or su
 	 */
 	public Proc(String shell) {
 		this.shell = shell;
@@ -24,6 +24,7 @@ public class Proc {
 
 	/**
 	 * Корректное завершение процесса и обнуление ссылки
+	 * 
 	 * @param ps
 	 */
 	public static void processDestroy(Process ps) {
@@ -40,7 +41,9 @@ public class Proc {
 
 	/**
 	 * Выполняет команды из массива cmds
-	 * @param cmds массив команд
+	 * 
+	 * @param cmds
+	 *            массив команд
 	 * @return Возвращает вывод stdout и stderr в массив строк
 	 * @throws IOException
 	 */
@@ -54,22 +57,22 @@ public class Proc {
 			ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
 			ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
 			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
-			for (String cmd : cmds) {				
+			for (String cmd : cmds) {
 				stdin.append(cmd).append('\n');
 			}
 			stdin.flush();
 			stdin.close();
-			
+
 			stdout = ps.getInputStream();
 			int count = -1;
 			while ((count = stdout.read(buffer)) > 0) {
 				res.append(new String(buffer).substring(0, count));
-			}			
+			}
 		} finally {
-			if (stdin!=null) {
+			if (stdin != null) {
 				stdin.close();
 			}
-			if (stdout!=null) {
+			if (stdout != null) {
 				stdout.close();
 			}
 			processDestroy(ps);
@@ -78,12 +81,14 @@ public class Proc {
 	}
 
 	/**
-	 * Рекурсивный поиск всех дочерних процессов 
-	 * @param ppid parent pid
+	 * Рекурсивный поиск всех дочерних процессов
+	 * 
+	 * @param ppid
+	 *            parent pid
 	 * @return pids with space as separator
 	 * @throws IOException
 	 */
-	public String getChilds(String ppid) throws IOException {		
+	public String getChilds(String ppid) throws IOException {
 		String[] psinfo, ps;
 		StringBuilder sb = new StringBuilder();
 
@@ -100,16 +105,19 @@ public class Proc {
 
 	/**
 	 * Убивает дерево процессов
-	 * @param ppid parent pid
+	 * 
+	 * @param ppid
+	 *            parent pid
 	 * @throws IOException
 	 */
-	public void killTree(String ppid) throws IOException {		
+	public void killTree(String ppid) throws IOException {
 		String cpid = getChilds(ppid);
 		exec(new String[] { "kill -9 " + ppid + " " + cpid });
 	}
 
 	/**
 	 * Убить один процесс
+	 * 
 	 * @param pid
 	 * @throws IOException
 	 */
