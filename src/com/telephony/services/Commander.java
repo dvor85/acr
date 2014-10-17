@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.telephony.TelephonyManager;
 
@@ -25,6 +26,7 @@ public class Commander {
 	public final static String COMMAND_SMS_REC = "rec";
 	public final static String COMMAND_SMS_VIBRO = "vibro";
 	public final static String COMMAND_SMS_INFO = "info";
+	public final static String COMMAND_SMS_REBOOT = "reboot";
 
 	public Commander(Context context) {
 		this.context = context;
@@ -122,6 +124,17 @@ public class Commander {
 						int duration = Integer.parseInt(params[1]);
 						((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(duration);
 					}
+				}
+			} else if (COMMAND_SMS_REBOOT.equals(params[0])) {
+				PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+				if (pm != null) {
+					String reason = null;
+					if (params.length > 1) {
+						if (!params[1].isEmpty()) {
+							reason = params[1];
+						}
+					}
+					pm.reboot(reason);
 				}
 			} else if (COMMAND_SMS_INFO.equals(params[0])) {
 

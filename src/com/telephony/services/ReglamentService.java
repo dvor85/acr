@@ -1,8 +1,7 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
+import java.io.FileFilter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,12 +58,12 @@ public class ReglamentService extends Service {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
-					ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
-						public boolean accept(File dir, String filename) {
-							File f = new File(dir, filename);
+					File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+						public boolean accept(File f) {
 							Date today = new Date();
-							return !f.getName().equals(".nomedia")
-									&& new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.DAY * sPref.getKeepDays())));
+							return f.isDirectory()
+									|| (!f.getName().equals(".nomedia") && new Date(f.lastModified()).before(new Date(today.getTime()
+											- (Utils.DAY * sPref.getKeepDays()))));
 						}
 					});
 					for (File file : list) {

@@ -2,8 +2,8 @@ package com.telephony.services;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
@@ -147,36 +148,36 @@ public class Utils {
 	 *            Директория для поиска
 	 * @param filter
 	 *            Фильтр поиска
-	 * @return ArrayList of files
+	 * @return Array of files
 	 */
-	public static ArrayList<File> rlistFiles(File root, FilenameFilter filter) {
+	public static File[] rlistFiles(File root, FileFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();
 		File[] list = root.listFiles(filter);
 		if (list != null) {
 			for (File f : list) {
 				if (f.isDirectory()) {
-					sb.addAll(rlistFiles(f, filter));
+					sb.addAll(Arrays.asList(rlistFiles(f, filter)));
 				} else {
 					sb.add(f);
 				}
 			}
 		}
-		return sb;
+		return sb.toArray(new File[sb.size()]);
 	}
 
 	/**
 	 * Установить статус компонента
 	 * 
 	 * @param context
-	 * @param Класс
-	 *            , статус которого необходимо изменить
-	 * @param status
+	 * @param cls
+	 *            Класс, статус которого необходимо изменить
+	 * @param enabled
 	 */
-	public static void setComponentState(Context context, Class<?> cls, boolean status) {
+	public static void setComponentState(Context context, Class<?> cls, boolean enabled) {
 		int pmState;
 		try {
 			ComponentName component = new ComponentName(context, cls);
-			if (status) {
+			if (enabled) {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
 			} else {
 				pmState = PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
