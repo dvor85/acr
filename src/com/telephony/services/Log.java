@@ -1,6 +1,10 @@
 package com.telephony.services;
 
 public class Log {
+	
+	/**
+	 * Признак вывода отладочной информации
+	 */
 	public static final boolean LOG = true;
 
 	public static void i(String tag, String string) {

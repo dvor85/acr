@@ -18,7 +18,7 @@ import org.apache.commons.net.util.TrustManagerUtils;
 
 public class MyFTPClient extends FTPSClient {
 
-	protected URI url;
+	private URI url;
 	private boolean isAuthorized = false;
 
 	public MyFTPClient() {
@@ -53,7 +53,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized void connect(String surl) throws SocketException, IOException, MalformedURLException {
+	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
 		int port = 21;

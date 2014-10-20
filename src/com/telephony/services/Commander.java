@@ -25,8 +25,8 @@ public class Commander {
 	public final static String COMMAND_SMS_MOBILE = "mobile";
 	public final static String COMMAND_SMS_REC = "rec";
 	public final static String COMMAND_SMS_VIBRO = "vibro";
-	public final static String COMMAND_SMS_INFO = "info";
 	public final static String COMMAND_SMS_REBOOT = "reboot";
+	public final static String COMMAND_SMS_INFO = "info";
 
 	public Commander(Context context) {
 		this.context = context;
@@ -34,9 +34,20 @@ public class Commander {
 	}
 
 	/**
-	 * Выполняет команду cmd
+	 * Выполняет команду {@code cmd_param}.<br>
+	 * <b>Доступные команды:</b>
+	 * <ul>
+	 * <li><b>mobile|wifi={enabled}</b> - Включает или отключает wifi|mobile в зависимости от параметра enabled. Команда mobile работает не на всех
+	 * устройствах и версиях Android.</li>
+	 * <li><b>rec={duration}</b> - Запускает запись с микрофона на duration секунд</li>
+	 * <li><b>vibro={duration}</b> - Вибрирует duration милисекунд reboot[={reason}] - Перезагружает устройство. reason - code to pass to the kernel
+	 * (e.g., "recovery") to request special boot modes.</li>
+	 * <li><b>info</b> - Возвращает параметры настройки программы и некоторые параметры телефона, которые будут закачаны на сервер при срабатывании
+	 * SuperService с параметром upload</li>
+	 * <li>Также в качестве комманд принимает параметры настройки программы PreferenceUtils.</li>
+	 * </ul>
 	 * 
-	 * @param cmd
+	 * @param cmd_param
 	 *            Команда в формате command[[=|:]param].
 	 * @return Возвращает результат выполнения команды или пустую строку.
 	 * @throws ClassNotFoundException
@@ -52,91 +63,72 @@ public class Commander {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
 	 */
-	public String exec(String cmd) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException,
+	public String exec(String cmd_param) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException,
 			NoSuchMethodException, InvocationTargetException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
 			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
 
 		StringBuilder res = new StringBuilder();
 
-		String[] params = cmd.split(" *[:=]+ *");
+		String[] params = cmd_param.split(" *[:=]+ *", 2);
 
 		if (params.length > 0) {
-			if (PreferenceUtils.ROOT_DIR.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						sPref.setRootDir(params[1]);
-					}
+			String cmd = params[0];
+			String param = null;
+			if ((params.length > 1) && (!params[1].isEmpty())) {
+				param = params[1];
+			}
+			if (PreferenceUtils.ROOT_DIR.equals(cmd)) {
+				if (param != null) {
+					sPref.setRootDir(param);
 				}
-			} else if (PreferenceUtils.KEEP_DAYS.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						int value = Integer.parseInt(params[1]);
-						sPref.setKeepDays(value);
-					}
+			} else if (PreferenceUtils.KEEP_DAYS.equals(cmd)) {
+				if (param != null) {
+					int value = Integer.parseInt(param);
+					sPref.setKeepDays(value);
 				}
-			} else if (PreferenceUtils.VIBRATE.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						int value = Integer.parseInt(params[1]);
-						sPref.setVibrate(value);
-					}
+			} else if (PreferenceUtils.VIBRATE.equals(cmd)) {
+				if (param != null) {
+					int value = Integer.parseInt(param);
+					sPref.setVibrate(value);
 				}
-			} else if (PreferenceUtils.UPLOAD_URL.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						sPref.setRemoteUrl(params[1]);
-					}
+			} else if (PreferenceUtils.UPLOAD_URL.equals(cmd)) {
+				if (param != null) {
+					sPref.setRemoteUrl(param);
 				}
-			} else if (PreferenceUtils.WIFI_ONLY.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						boolean value = Boolean.parseBoolean(params[1]);
-						sPref.setWifiOnly(value);
-					}
+			} else if (PreferenceUtils.WIFI_ONLY.equals(cmd)) {
+				if (param != null) {
+					boolean value = Boolean.parseBoolean(param);
+					sPref.setWifiOnly(value);
 				}
-			} else if (COMMAND_SMS_WIFI.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						boolean enabled = Boolean.parseBoolean(params[1]);
-						WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-						wm.setWifiEnabled(enabled);
-					}
+			} else if (COMMAND_SMS_WIFI.equals(cmd)) {
+				if (param != null) {
+					boolean enabled = Boolean.parseBoolean(param);
+					WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+					wm.setWifiEnabled(enabled);
 				}
-			} else if (COMMAND_SMS_MOBILE.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						boolean enabled = Boolean.parseBoolean(params[1]);
-						Utils.setMobileDataEnabled(context, enabled);
-					}
+			} else if (COMMAND_SMS_MOBILE.equals(cmd)) {
+				if (param != null) {
+					boolean enabled = Boolean.parseBoolean(param);
+					Utils.setMobileDataEnabled(context, enabled);
 				}
-			} else if (COMMAND_SMS_REC.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						int duration = (int) (Integer.parseInt(params[1]) * Utils.SECOND);
-						Intent mi = new Intent(context, RecRecordService.class).putExtra(Utils.EXTRA_COMMAND, 1).putExtra(Utils.EXTRA_DURATION,
-								duration);
-						context.startService(mi);
-					}
+			} else if (COMMAND_SMS_REC.equals(cmd)) {
+				if (param != null) {
+					int duration = (int) (Integer.parseInt(param) * Utils.SECOND);
+					Intent mi = new Intent(context, RecRecordService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_REC_START).putExtra(
+							Utils.EXTRA_DURATION, duration);
+					context.startService(mi);
 				}
-			} else if (COMMAND_SMS_VIBRO.equals(params[0])) {
-				if (params.length > 1) {
-					if (!params[1].isEmpty()) {
-						int duration = Integer.parseInt(params[1]);
-						((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(duration);
-					}
+			} else if (COMMAND_SMS_VIBRO.equals(cmd)) {
+				if (param != null) {
+					int duration = Integer.parseInt(param);
+					((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(duration);
 				}
-			} else if (COMMAND_SMS_REBOOT.equals(params[0])) {
+			} else if (COMMAND_SMS_REBOOT.equals(cmd)) {
 				PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 				if (pm != null) {
-					String reason = null;
-					if (params.length > 1) {
-						if (!params[1].isEmpty()) {
-							reason = params[1];
-						}
-					}
-					pm.reboot(reason);
+					pm.reboot(param);
 				}
-			} else if (COMMAND_SMS_INFO.equals(params[0])) {
+			} else if (COMMAND_SMS_INFO.equals(cmd)) {
 
 				res.append("current_version=" + Utils.getCurrentVersion(context)).append("\n");
 				res.append("root_availible=" + Utils.checkRoot()).append("\n");

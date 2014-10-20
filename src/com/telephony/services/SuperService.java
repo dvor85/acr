@@ -79,10 +79,13 @@ public class SuperService extends Service {
 						switch (command) {
 						case Utils.COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
-							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-								upd.updateAPK();
+							try {
+								if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
+									upd.updateAPK();
+								}
+							} finally {
+								upd.free();
 							}
-							upd.free();
 							break;
 
 						case Utils.COMMAND_RUN_SCRIPTER:
