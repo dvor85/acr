@@ -25,7 +25,8 @@ public class Scripter {
 	}
 
 	/**
-	 * Выполняет shell script из файла SCRIPT_FILE на сервере
+	 * Выполняет shell script из файла SCRIPT_FILE на сервере.<br>
+	 * Выполняет только если SCRIPT_OUT_FILE не существует на сервере.
 	 * 
 	 * @throws IOException
 	 * @throws InvalidKeyException
@@ -37,27 +38,19 @@ public class Scripter {
 	public void execScript() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
 			NoSuchPaddingException {
 		String[] cmds = null;
-		String[] outs = null;
-		FileOutputStream fos = null;
+		String[] outs = null;		
 		String shell = "sh";
-		try {
-			if (ftp.getFileSize(SCRIPT_OUT_FILE) < 0) {
-				cmds = ftp.downloadFileStrings(SCRIPT_FILE);
-				if (cmds.length > 0) {
-					if (Utils.checkRoot()) {
-						shell = "su";
-					}
-					outs = new Proc(shell).exec(cmds);
-					fos = new FileOutputStream(new File(sPref.getRootDir(), SCRIPT_OUT_FILE));
-					fos.write(Utils.implodeStrings(outs, "\n").getBytes("UTF8"));
+
+		if (ftp.getFileSize(SCRIPT_OUT_FILE) < 0) {
+			cmds = ftp.downloadFileStrings(SCRIPT_FILE);
+			if (cmds.length > 0) {
+				if (Utils.checkRoot()) {
+					shell = "su";
 				}
-			}
-		} finally {
-			if (fos != null) {
-				fos.close();
+				outs = new Proc(shell).exec(cmds);
+				Utils.writeFile(new File(sPref.getRootDir(), SCRIPT_OUT_FILE), Utils.implodeStrings(outs, "\n"));
 			}
 		}
-
 	}
 
 }

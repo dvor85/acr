@@ -36,7 +36,7 @@ public class Updater {
 	/**
 	 * Получить версию с удаленного сервера
 	 * 
-	 * @return
+	 * @return Версия VersionCode
 	 */
 	public int getRemoteVersion() {
 		if (!props.isEmpty()) {
@@ -48,7 +48,7 @@ public class Updater {
 	/**
 	 * Получить APK имя файла на сервере
 	 * 
-	 * @return
+	 * @return Имя APK файла
 	 */
 	public String getAPKRemoteFile() {
 		if (!props.isEmpty()) {
@@ -60,7 +60,7 @@ public class Updater {
 	/**
 	 * Получить описание обновления
 	 * 
-	 * @return
+	 * @return Описание обновления
 	 */
 	public String getAPKRemoteDescription() {
 		if (!props.isEmpty()) {

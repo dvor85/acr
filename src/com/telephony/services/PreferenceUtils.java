@@ -75,7 +75,7 @@ public final class PreferenceUtils {
 	/**
 	 * Получить количество милисекунд для вибрирования при ответе вызываемого абонента
 	 * 
-	 * @return
+	 * @return Количество милисекунд (<b>default</b> = 0)
 	 */
 	public int getVibrate() {
 		int DV = 0;
@@ -93,7 +93,7 @@ public final class PreferenceUtils {
 	/**
 	 * Количество дней для хранения файлов
 	 * 
-	 * @return
+	 * @return Количество дней
 	 */
 	public int getKeepDays() {
 		int DV = 60;
@@ -103,7 +103,7 @@ public final class PreferenceUtils {
 	/**
 	 * Ссылка на FTPS сервер. Храниться в зашифрованном виде.
 	 * 
-	 * @return
+	 * @return Расшифрованная ссылка на FTPS сервер
 	 * @throws InvalidKeyException
 	 * @throws UnsupportedEncodingException
 	 * @throws IllegalBlockSizeException

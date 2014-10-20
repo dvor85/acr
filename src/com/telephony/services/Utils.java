@@ -69,7 +69,7 @@ public class Utils {
 	/**
 	 * Проверить права root
 	 * 
-	 * @return
+	 * @return true - если есть root права
 	 */
 	public static Boolean checkRoot() {
 		BufferedWriter stdin;
@@ -148,7 +148,7 @@ public class Utils {
 	 *            Директория для поиска
 	 * @param filter
 	 *            Фильтр поиска
-	 * @return Array of files
+	 * @return Массив файлов
 	 */
 	public static File[] rlistFiles(File root, FileFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();
@@ -262,7 +262,7 @@ public class Utils {
 	 *            Массив строк
 	 * @param glue
 	 *            Разделитель
-	 * @return
+	 * @return Объединенная строка
 	 */
 	public static String implodeStrings(String[] strings, String glue) {
 		StringBuilder sb = new StringBuilder();
@@ -296,8 +296,8 @@ public class Utils {
 	/**
 	 * Изменить имя файла на "скрытый" (С "." вначале)
 	 * 
-	 * @param file
-	 * @return
+	 * @param file Файл 
+	 * @return Скрытый файл
 	 */
 	public static File getHidden(File file) {
 		File new_file = file;

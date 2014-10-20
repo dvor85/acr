@@ -12,7 +12,7 @@ import java.io.OutputStreamWriter;
  */
 public class Proc {
 	private String shell;
-	protected String ppid;
+	private String ppid;
 
 	/**
 	 * @param shell
@@ -121,11 +121,15 @@ public class Proc {
 	 * @param pid
 	 * @throws IOException
 	 */
-	public void kill(String pid) throws IOException {
-		// убить процесс
-		// делать это с правами запущенного процесса. Process.destroy
-		// убивает только с пользовательскими правами ???
+	public void kill(String pid) throws IOException {		
 		exec(new String[] { "kill -9 " + pid });
+	}
+
+	/**
+	 * @return the ppid
+	 */
+	public String getPpid() {
+		return ppid;
 	}
 
 }
