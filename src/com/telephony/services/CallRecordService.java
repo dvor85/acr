@@ -90,7 +90,7 @@ public class CallRecordService extends Service {
 					break;
 
 				case Utils.STATE_CALL_START:
-					if (CALL_OUTGOING.equals(direct) && Utils.CheckRoot()) {
+					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
 						runwait = new RunWait();
 						runwait.run();
 						if (command == Utils.STATE_CALL_START) {
@@ -98,7 +98,7 @@ public class CallRecordService extends Service {
 						}
 					}
 
-					if ((command == Utils.STATE_CALL_START) && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((command == Utils.STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
 						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
@@ -107,16 +107,37 @@ public class CallRecordService extends Service {
 						recorder.setOutputFile(myFileName.getAbsolutePath());
 
 						OnErrorListener errorListener = new OnErrorListener() {
-							public void onError(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnErrorListener: " + arg1 + "," + arg2);
+							public void onError(MediaRecorder mr, int what, int extra) {
+								switch (what) {
+								case MediaRecorder.MEDIA_ERROR_SERVER_DIED:
+									Log.d(Utils.LOG_TAG,
+											context.getClass().getName()
+													+ ": Media server died. In this case, the application must release the MediaRecorder object and instantiate a new one.");
+									break;
+								default:
+									Log.d(Utils.LOG_TAG, context.getClass().getName() + ": Unspecified media recorder error.");
+									break;
+								}
 								stop();
 							}
 						};
 						recorder.setOnErrorListener(errorListener);
 
 						OnInfoListener infoListener = new OnInfoListener() {
-							public void onInfo(MediaRecorder arg0, int arg1, int arg2) {
-								Log.e(Utils.LOG_TAG, "OnInfoListener: " + arg1 + "," + arg2);
+							public void onInfo(MediaRecorder mr, int what, int extra) {
+								switch (what) {
+								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED:
+									Log.d(Utils.LOG_TAG, context.getClass().getName()
+											+ ": A maximum duration had been setup and has now been reached.");
+									break;
+								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED:
+									Log.d(Utils.LOG_TAG, context.getClass().getName()
+											+ ": A maximum filesize had been setup and has now been reached.");
+									break;
+								default:
+									Log.d(Utils.LOG_TAG, context.getClass().getName() + ": Unspecified media recorder error.");
+									break;
+								}
 								stop();
 							}
 						};
@@ -153,13 +174,18 @@ public class CallRecordService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {				
+			} finally {
 				stopSelf(startId);
 			}
 		}
 
 	}
 
+	/**
+	 * Класс который реализует паузу до ответа вызываемого абонента Интерфейс Runnable реализуется для тестирования (он не обязателен)
+	 * 
+	 * @author Dmitriy
+	 */
 	private class RunWait implements Runnable {
 		private Process ps = null;
 		private Boolean running = false;
@@ -240,7 +266,7 @@ public class CallRecordService extends Service {
 	}
 
 	/**
-	 * returns absolute file name
+	 * Получить файл для записи
 	 * 
 	 * @return
 	 * @throws NoSuchPaddingException

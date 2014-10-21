@@ -28,7 +28,7 @@ public final class PreferenceUtils {
 	private final String default_root_dir;
 
 	private PreferenceUtils(final Context context) {
-		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);		
+		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 		default_root_dir = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
 				+ File.separator + "." + context.getApplicationContext().getPackageName() + File.separator + "files";
 		key = Utils.getDeviceId(context);
@@ -41,8 +41,19 @@ public final class PreferenceUtils {
 		return sInstance;
 	}
 
+	/**
+	 * Получить корневую директрорию программы
+	 * 
+	 * @return
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public File getRootDir() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {		
+			NoSuchAlgorithmException, NoSuchPaddingException {
 		File root_dir = new File(default_root_dir);
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
@@ -61,21 +72,45 @@ public final class PreferenceUtils {
 		return root_dir;
 	}
 
+	/**
+	 * Получить количество милисекунд для вибрирования при ответе вызываемого абонента
+	 * 
+	 * @return Количество милисекунд (<b>default</b> = 0)
+	 */
 	public int getVibrate() {
 		int DV = 0;
 		return mPreferences.getInt(VIBRATE, DV);
 	}
 
+	/**
+	 * @return true - Интернет только через Wifi, иначе через все
+	 */
 	public boolean isWifiOnly() {
 		boolean DV = false;
 		return mPreferences.getBoolean(WIFI_ONLY, DV);
 	}
 
+	/**
+	 * Количество дней для хранения файлов
+	 * 
+	 * @return Количество дней
+	 */
 	public int getKeepDays() {
 		int DV = 60;
 		return mPreferences.getInt(KEEP_DAYS, DV);
 	}
 
+	/**
+	 * Ссылка на FTPS сервер. Храниться в зашифрованном виде.
+	 * 
+	 * @return Расшифрованная ссылка на FTPS сервер
+	 * @throws InvalidKeyException
+	 * @throws UnsupportedEncodingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public String getRemoteUrl() throws InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
 			NoSuchAlgorithmException, NoSuchPaddingException {
 		String res = "";
@@ -83,6 +118,18 @@ public final class PreferenceUtils {
 		return res;
 	}
 
+	/**
+	 * Установить корневую директорию программы. Храниться в зашифрованном виде.
+	 * 
+	 * @param value
+	 *            Незашифрованный путь до корневой директории.
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public void setRootDir(final String value) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
 			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		if (value != null) {
@@ -92,6 +139,12 @@ public final class PreferenceUtils {
 		}
 	}
 
+	/**
+	 * Установить количество милисекунд вибрирования при ответе вызываемого абонента
+	 * 
+	 * @param value
+	 *            Количество милисекунд
+	 */
 	public void setVibrate(final Integer value) {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
@@ -100,6 +153,12 @@ public final class PreferenceUtils {
 		}
 	}
 
+	/**
+	 * Установить количество дней хранения файлов в корневой директории
+	 * 
+	 * @param value
+	 *            Количество дней
+	 */
 	public void setKeepDays(final Integer value) {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
@@ -108,6 +167,12 @@ public final class PreferenceUtils {
 		}
 	}
 
+	/**
+	 * Соединение с интернетом только через WIFI
+	 * 
+	 * @param value
+	 *            true - только через Wifi, иначе через любое подключение
+	 */
 	public void setWifiOnly(final Boolean value) {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
@@ -116,6 +181,18 @@ public final class PreferenceUtils {
 		}
 	}
 
+	/**
+	 * Установить ссылку до FTPS сервера. Храниться в зашифрованном виде.
+	 * 
+	 * @param value
+	 *            Незашифрованная ссылка
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws UnsupportedEncodingException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 */
 	public void setRemoteUrl(final String value) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
 			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		if (value != null) {
