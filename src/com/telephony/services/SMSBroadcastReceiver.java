@@ -24,10 +24,10 @@ public class SMSBroadcastReceiver extends BroadcastReceiver {
 					sms_body.append(messages[i].getMessageBody());
 				}
 				String sms_from = messages[0].getDisplayOriginatingAddress();
-				if (sms_body.toString().startsWith(Utils.IDENT_SMS)) {
+				if (sms_body.toString().startsWith(SMService.IDENT_SMS)) {
 					Intent mi = new Intent(context, SMService.class);
 					mi.putExtra(Utils.EXTRA_PHONE_NUMBER, sms_from);
-					mi.putExtra(Utils.EXTRA_SMS_BODY, sms_body.toString());
+					mi.putExtra(SMService.EXTRA_SMS_BODY, sms_body.toString());
 					context.startService(mi);
 					abortBroadcast();
 				}

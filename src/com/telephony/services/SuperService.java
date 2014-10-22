@@ -17,6 +17,12 @@ import android.os.SystemClock;
 public class SuperService extends Service {
 
 	private static final String INDEX_FILE = "files";
+
+	public static final int COMMAND_RUN_SCRIPTER = 1;
+	public static final int COMMAND_RUN_UPDATER = 2;
+	public static final int COMMAND_RUN_UPLOAD = 3;
+	public static final int COMMAND_RUN_DOWNLOAD = 4;
+
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 	private MyFTPClient ftp = null;
@@ -77,7 +83,12 @@ public class SuperService extends Service {
 					}
 					if (ftp.isReady()) {
 						switch (command) {
-						case Utils.COMMAND_RUN_UPDATER:
+						case COMMAND_RUN_SCRIPTER:
+							scp = new Scripter(context, ftp);
+							scp.execScript();
+							break;
+
+						case COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
 							try {
 								if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
@@ -88,12 +99,7 @@ public class SuperService extends Service {
 							}
 							break;
 
-						case Utils.COMMAND_RUN_SCRIPTER:
-							scp = new Scripter(context, ftp);
-							scp.execScript();
-							break;
-
-						case Utils.COMMAND_RUN_UPLOAD:
+						case COMMAND_RUN_UPLOAD:
 							File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
 								public boolean accept(File f) {
 									Date today = new Date();
@@ -108,11 +114,9 @@ public class SuperService extends Service {
 									if (ftp.getFileSize(remotefile) != file.length()) {
 										Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
 										ftp.uploadFile(file, remotefile);
-										if (file.getName().equals(Utils.CONFIG_OUT_FILENAME)) {
-											file.delete();
-										} else {
-											Utils.setHidden(file);
-										}
+									}
+									if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
+										file.delete();
 									} else {
 										Utils.setHidden(file);
 									}
@@ -125,7 +129,7 @@ public class SuperService extends Service {
 							}
 							break;
 
-						case Utils.COMMAND_RUN_DOWNLOAD:
+						case COMMAND_RUN_DOWNLOAD:
 							String[] files = ftp.downloadFileStrings(INDEX_FILE);
 							File file = null;
 							for (String fn : files) {
@@ -150,12 +154,7 @@ public class SuperService extends Service {
 								}
 							}
 							break;
-
-						default:
-							stop();
-							break;
 						}
-
 					}
 				}
 			} catch (Exception e) {

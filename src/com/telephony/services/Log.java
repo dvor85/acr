@@ -1,7 +1,7 @@
 package com.telephony.services;
 
 public class Log {
-	
+
 	/**
 	 * Признак вывода отладочной информации
 	 */

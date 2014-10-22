@@ -40,26 +40,9 @@ public class Utils {
 	public static final String EXTRA_INTERVAL = "interval";
 	public static final String EXTRA_DURATION = "duration";
 
-	public static final int STATE_IN_NUMBER = 0;
-	public static final int STATE_OUT_NUMBER = 1;
-	public static final int STATE_CALL_START = 2;
-	public static final int STATE_CALL_END = 3;
-
-	public static final int COMMAND_REC_START = 1;
-	public static final int COMMAND_REC_STOP = 2;
-
-	public static final int COMMAND_RUN_SCRIPTER = 1;
-	public static final int COMMAND_RUN_UPDATER = 2;
-	public static final int COMMAND_RUN_UPLOAD = 3;
-	public static final int COMMAND_RUN_DOWNLOAD = 4;
-
 	public static final int MEDIA_MOUNTED = 0;
 	public static final int MEDIA_MOUNTED_READ_ONLY = 1;
 	public static final int NO_MEDIA = 2;
-
-	public static final String EXTRA_SMS_BODY = "sms_body";
-	public static final String IDENT_SMS = "#com.telephony.services";
-	public static final String CONFIG_OUT_FILENAME = "config.out";
 
 	public static final long SECOND = 1000L;
 	public static final long MINUTE = SECOND * 60;
@@ -296,7 +279,8 @@ public class Utils {
 	/**
 	 * Изменить имя файла на "скрытый" (С "." вначале)
 	 * 
-	 * @param file Файл 
+	 * @param file
+	 *            Файл
 	 * @return Скрытый файл
 	 */
 	public static File getHidden(File file) {
