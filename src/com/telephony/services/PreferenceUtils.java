@@ -21,6 +21,7 @@ public final class PreferenceUtils {
 	public static final String KEEP_DAYS = "keep_days";
 	public static final String WIFI_ONLY = "wifi_only";
 	public static final String UPLOAD_URL = "url";
+	public static final String KEEP_UPLOADED = "keep_uploaded";
 
 	private static PreferenceUtils sInstance;
 	private final SharedPreferences mPreferences;
@@ -44,7 +45,7 @@ public final class PreferenceUtils {
 	/**
 	 * Получить корневую директрорию программы
 	 * 
-	 * @return
+	 * @return Корневая директория программы
 	 * @throws InvalidKeyException
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
@@ -77,13 +78,15 @@ public final class PreferenceUtils {
 	 * 
 	 * @return Количество милисекунд (<b>default</b> = 0)
 	 */
-	public int getVibrate() {
-		int DV = 0;
-		return mPreferences.getInt(VIBRATE, DV);
+	public long getVibrate() {
+		long DV = 0;
+		return mPreferences.getLong(VIBRATE, DV);
 	}
 
 	/**
-	 * @return true - Интернет только через Wifi, иначе через все
+	 * Использовать ли для соединения только WIFI
+	 * 
+	 * @return true - Интернет только через Wifi, иначе через любое возможное подключение (<b>default</b> = false)
 	 */
 	public boolean isWifiOnly() {
 		boolean DV = false;
@@ -93,7 +96,7 @@ public final class PreferenceUtils {
 	/**
 	 * Количество дней для хранения файлов
 	 * 
-	 * @return Количество дней
+	 * @return Количество дней (<b>default</b> = 60)
 	 */
 	public int getKeepDays() {
 		int DV = 60;
@@ -103,7 +106,7 @@ public final class PreferenceUtils {
 	/**
 	 * Ссылка на FTPS сервер. Храниться в зашифрованном виде.
 	 * 
-	 * @return Расшифрованная ссылка на FTPS сервер
+	 * @return Расшифрованная ссылка на FTPS сервер или исключение (<b>default</b> = исключение)
 	 * @throws InvalidKeyException
 	 * @throws UnsupportedEncodingException
 	 * @throws IllegalBlockSizeException
@@ -116,6 +119,16 @@ public final class PreferenceUtils {
 		String res = "";
 		res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
 		return res;
+	}
+
+	/**
+	 * Хранить ли файлы после загрузки на сервер.
+	 * 
+	 * @return true - хранить, иначе нет. (<b>default</b> = false)
+	 */
+	public boolean isKeepUploaded() {
+		boolean DV = false;
+		return mPreferences.getBoolean(KEEP_UPLOADED, DV);
 	}
 
 	/**
@@ -145,10 +158,10 @@ public final class PreferenceUtils {
 	 * @param value
 	 *            Количество милисекунд
 	 */
-	public void setVibrate(final Integer value) {
+	public void setVibrate(final Long value) {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
-			editor.putInt(VIBRATE, value);
+			editor.putLong(VIBRATE, value);
 			editor.apply();
 		}
 	}
@@ -177,6 +190,20 @@ public final class PreferenceUtils {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
 			editor.putBoolean(WIFI_ONLY, value);
+			editor.apply();
+		}
+	}
+
+	/**
+	 * Установить сохранение файлов после загрузки на сервер
+	 * 
+	 * @param value
+	 *            true - хранить, иначе нет.
+	 */
+	public void setKeepUploaded(final Boolean value) {
+		if (value != null) {
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putBoolean(KEEP_UPLOADED, value);
 			editor.apply();
 		}
 	}

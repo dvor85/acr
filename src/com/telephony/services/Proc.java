@@ -121,7 +121,7 @@ public class Proc {
 	 * @param pid
 	 * @throws IOException
 	 */
-	public void kill(String pid) throws IOException {		
+	public void kill(String pid) throws IOException {
 		exec(new String[] { "kill -9 " + pid });
 	}
 

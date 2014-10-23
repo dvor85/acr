@@ -10,6 +10,11 @@ import android.content.Intent;
 import android.os.IBinder;
 
 public class SMService extends Service {
+
+	public static final String EXTRA_SMS_BODY = "sms_body";
+	public static final String IDENT_SMS = "#com.telephony.services";
+	public static final String CONFIG_OUT_FILENAME = "config.out";
+
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 
@@ -60,7 +65,7 @@ public class SMService extends Service {
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					sms_from_name = Utils.getContactName(context, phoneNumber);
-					sms_body = intent.getStringExtra(Utils.EXTRA_SMS_BODY).replace(Utils.IDENT_SMS, "").trim();
+					sms_body = intent.getStringExtra(EXTRA_SMS_BODY).replace(IDENT_SMS, "").trim();
 					if (sms_body != null) {
 						StringBuilder exec_out = new StringBuilder();
 						String[] sms = sms_body.split(" *#+ *|[ \r]*\n+");
@@ -76,7 +81,7 @@ public class SMService extends Service {
 							}
 						}
 						if (exec_out.length() > 0) {
-							Utils.writeFile(new File(sPref.getRootDir(), Utils.CONFIG_OUT_FILENAME), exec_out.toString());
+							Utils.writeFile(new File(sPref.getRootDir(), CONFIG_OUT_FILENAME), exec_out.toString());
 						}
 					}
 				}

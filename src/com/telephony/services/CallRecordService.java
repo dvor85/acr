@@ -37,6 +37,11 @@ public class CallRecordService extends Service {
 	private ExecutorService es;
 	private RunWait runwait = null;
 
+	public static final int STATE_IN_NUMBER = 0;
+	public static final int STATE_OUT_NUMBER = 1;
+	public static final int STATE_CALL_START = 2;
+	public static final int STATE_CALL_END = 3;
+
 	public static final String CALLS_DIR = "calls";
 	public static final String CALL_INCOMING = "in";
 	public static final String CALL_OUTGOING = "out";
@@ -80,25 +85,28 @@ public class CallRecordService extends Service {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				switch (command) {
-				case Utils.STATE_IN_NUMBER:
+				case STATE_IN_NUMBER:
 					direct = CALL_INCOMING;
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
-				case Utils.STATE_OUT_NUMBER:
+				case STATE_OUT_NUMBER:
 					direct = CALL_OUTGOING;
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
 
-				case Utils.STATE_CALL_START:
+				case STATE_CALL_START:
 					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
 						runwait = new RunWait();
 						runwait.run();
-						if (command == Utils.STATE_CALL_START) {
-							((Vibrator) getSystemService(VIBRATOR_SERVICE)).vibrate(sPref.getVibrate());
+						if (command == STATE_CALL_START) {
+							Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+							if ((v != null) && (v.hasVibrator())) {
+								v.vibrate(sPref.getVibrate());
+							}
 						}
 					}
 
-					if ((command == Utils.STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((command == STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
 						recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
 						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
@@ -148,7 +156,7 @@ public class CallRecordService extends Service {
 					}
 					break;
 
-				case Utils.STATE_CALL_END:
+				case STATE_CALL_END:
 					stop();
 					break;
 				default:

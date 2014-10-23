@@ -1,7 +1,6 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +37,7 @@ public class Scripter {
 	public void execScript() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
 			NoSuchPaddingException {
 		String[] cmds = null;
-		String[] outs = null;		
+		String[] outs = null;
 		String shell = "sh";
 
 		if (ftp.getFileSize(SCRIPT_OUT_FILE) < 0) {

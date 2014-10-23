@@ -26,6 +26,7 @@ public class Commander {
 	public final static String COMMAND_SMS_REC = "rec";
 	public final static String COMMAND_SMS_VIBRO = "vibro";
 	public final static String COMMAND_SMS_REBOOT = "reboot";
+	public final static String COMMAND_SMS_SUPER = "super";
 	public final static String COMMAND_SMS_INFO = "info";
 
 	public Commander(Context context) {
@@ -40,8 +41,10 @@ public class Commander {
 	 * <li><b>mobile|wifi={enabled}</b> - Включает или отключает wifi|mobile в зависимости от параметра enabled. Команда mobile работает не на всех
 	 * устройствах и версиях Android.</li>
 	 * <li><b>rec={duration}</b> - Запускает запись с микрофона на duration секунд</li>
-	 * <li><b>vibro={duration}</b> - Вибрирует duration милисекунд reboot[={reason}] - Перезагружает устройство. reason - code to pass to the kernel
-	 * (e.g., "recovery") to request special boot modes.</li>
+	 * <li><b>vibro={duration}</b> - Вибрирует duration милисекунд</li>
+	 * <li><b>reboot[={reason}]</b> - Перезагружает устройство. reason - code to pass to the kernel</li> (e.g., "recovery") to request special boot
+	 * modes.</li>
+	 * <li><b>super={command}</b> - Немедленно запускает SuperService с коммандой command.</li>
 	 * <li><b>info</b> - Возвращает параметры настройки программы и некоторые параметры телефона, которые будут закачаны на сервер при срабатывании
 	 * SuperService с параметром upload</li>
 	 * <li>Также в качестве комманд принимает параметры настройки программы PreferenceUtils.</li>
@@ -88,7 +91,7 @@ public class Commander {
 				}
 			} else if (PreferenceUtils.VIBRATE.equals(cmd)) {
 				if (param != null) {
-					int value = Integer.parseInt(param);
+					long value = Long.parseLong(param);
 					sPref.setVibrate(value);
 				}
 			} else if (PreferenceUtils.UPLOAD_URL.equals(cmd)) {
@@ -99,6 +102,11 @@ public class Commander {
 				if (param != null) {
 					boolean value = Boolean.parseBoolean(param);
 					sPref.setWifiOnly(value);
+				}
+			} else if (PreferenceUtils.KEEP_UPLOADED.equals(cmd)) {
+				if (param != null) {
+					boolean value = Boolean.parseBoolean(param);
+					sPref.setKeepUploaded(value);
 				}
 			} else if (COMMAND_SMS_WIFI.equals(cmd)) {
 				if (param != null) {
@@ -114,19 +122,28 @@ public class Commander {
 			} else if (COMMAND_SMS_REC.equals(cmd)) {
 				if (param != null) {
 					int duration = (int) (Integer.parseInt(param) * Utils.SECOND);
-					Intent mi = new Intent(context, RecRecordService.class).putExtra(Utils.EXTRA_COMMAND, Utils.COMMAND_REC_START).putExtra(
-							Utils.EXTRA_DURATION, duration);
+					Intent mi = new Intent(context, RecRecordService.class).putExtra(Utils.EXTRA_COMMAND, RecRecordService.COMMAND_REC_START)
+							.putExtra(Utils.EXTRA_DURATION, duration);
 					context.startService(mi);
 				}
 			} else if (COMMAND_SMS_VIBRO.equals(cmd)) {
 				if (param != null) {
-					int duration = Integer.parseInt(param);
-					((Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE)).vibrate(duration);
+					long milliseconds = Long.parseLong(param);
+					Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+					if ((v != null) && (v.hasVibrator())) {
+						v.vibrate(milliseconds);
+					}
 				}
 			} else if (COMMAND_SMS_REBOOT.equals(cmd)) {
 				PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 				if (pm != null) {
 					pm.reboot(param);
+				}
+			} else if (COMMAND_SMS_SUPER.equals(cmd)) {
+				if (param != null) {
+					int command = Integer.parseInt(param);
+					Intent mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, command);
+					context.startService(mi);
 				}
 			} else if (COMMAND_SMS_INFO.equals(cmd)) {
 
@@ -137,6 +154,7 @@ public class Commander {
 				res.append(PreferenceUtils.KEEP_DAYS + "=" + sPref.getKeepDays()).append("\n");
 				res.append(PreferenceUtils.VIBRATE + "=" + sPref.getVibrate()).append("\n");
 				res.append(PreferenceUtils.WIFI_ONLY + "=" + sPref.isWifiOnly()).append("\n");
+				res.append(PreferenceUtils.KEEP_UPLOADED + "=" + sPref.isKeepUploaded()).append("\n");
 
 				WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 				if (wm.isWifiEnabled()) {

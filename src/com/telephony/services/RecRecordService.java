@@ -30,6 +30,9 @@ public class RecRecordService extends Service {
 	private ExecutorService es;
 	private int max_duration;
 
+	public static final int COMMAND_REC_START = 1;
+	public static final int COMMAND_REC_STOP = 2;
+
 	public static final String RECS_DIR = "recs";
 	public static final String MIC_RECORD = "rec";
 
@@ -73,7 +76,7 @@ public class RecRecordService extends Service {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				max_duration = intent.getIntExtra(Utils.EXTRA_DURATION, (int) Utils.HOUR * 6);
 				switch (command) {
-				case Utils.COMMAND_REC_START:
+				case COMMAND_REC_START:
 
 					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
 						myFileName = getFilename();
@@ -125,7 +128,7 @@ public class RecRecordService extends Service {
 					}
 					break;
 
-				case Utils.COMMAND_REC_STOP:
+				case COMMAND_REC_STOP:
 					stop();
 					break;
 				default:
