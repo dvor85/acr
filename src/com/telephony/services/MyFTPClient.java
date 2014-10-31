@@ -187,7 +187,7 @@ public class MyFTPClient extends FTPSClient {
 		return local_file;
 	}
 
-	public void uploadFile(File local_file, String remotefile) throws IOException {
+	public boolean uploadFile(File local_file, String remotefile) throws IOException {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream(local_file);
@@ -195,6 +195,7 @@ public class MyFTPClient extends FTPSClient {
 			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
 				throw new IOException(getReplyString());
 			}
+			return true;
 		} finally {
 			if (in != null) {
 				in.close();

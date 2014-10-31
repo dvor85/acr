@@ -1,8 +1,10 @@
 package com.telephony.services;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +69,6 @@ public class Utils {
 			ps.waitFor();
 			return ps.exitValue() == 0;
 		} catch (Exception e) {
-			e.printStackTrace();
 		} finally {
 			if (ps != null) {
 				ps.destroy();
@@ -351,6 +353,34 @@ public class Utils {
 				fos.close();
 			}
 		}
+	}
+
+	public static String md5sum(File file) throws IOException {
+		final int BUFFER_SIZE = 8192;
+		byte[] buffer = new byte[BUFFER_SIZE];
+		FileInputStream fis = null;
+		StringBuffer sb = new StringBuffer();
+		try {
+			fis = new FileInputStream(file);
+			if (fis != null) {
+				MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+				int count = -1;
+				while ((count = fis.read(buffer)) > 0) {
+					md.update(buffer, 0, count);
+				}
+
+				byte[] array = md.digest();
+				for (int i = 0; i < array.length; ++i) {
+					sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1, 3));
+				}
+			}
+		} catch (Exception e) {
+		} finally {
+			if (fis != null) {
+				fis.close();
+			}
+		}
+		return sb.toString();
 	}
 
 }

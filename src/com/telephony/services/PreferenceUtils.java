@@ -114,10 +114,12 @@ public final class PreferenceUtils {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
 	 */
-	public String getRemoteUrl() throws InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		String res = "";
-		res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
+	public String getRemoteUrl() {
+		String res = null;
+		try {
+			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
+		} catch (Exception e) {			
+		}
 		return res;
 	}
 

@@ -78,13 +78,9 @@ public class RecRecordService extends Service {
 				switch (command) {
 				case COMMAND_REC_START:
 
-					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
 						myFileName = getFilename();
-						recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-						recorder.setMaxDuration(max_duration);
-						recorder.setOutputFile(myFileName.getAbsolutePath());
+						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_RECOGNITION, myFileName, max_duration);
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							public void onError(MediaRecorder mr, int what, int extra) {
@@ -123,8 +119,8 @@ public class RecRecordService extends Service {
 						};
 						recorder.setOnInfoListener(infoListener);
 
-						recorder.prepare();
-						recorder.start();
+						//recorder.prepare();
+						//recorder.start();
 					}
 					break;
 

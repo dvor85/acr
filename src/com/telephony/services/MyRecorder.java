@@ -1,11 +1,57 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.IOException;
 
 import android.media.MediaRecorder;
 
 public class MyRecorder extends MediaRecorder {
-	protected Boolean started = false;
+	private boolean started = false;
+
+	/**
+	 * Запущена ли запись.
+	 * 
+	 * @return true - если запись идет.
+	 */
+	public boolean isStarted() {
+		return started;
+	}
+
+	private static int[] AUDIO_SOURCES = { MediaRecorder.AudioSource.VOICE_CALL, MediaRecorder.AudioSource.VOICE_UPLINK,
+			MediaRecorder.AudioSource.VOICE_DOWNLINK, MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.DEFAULT,
+			MediaRecorder.AudioSource.MIC };
+
+	/**
+	 * Начинает запись. Предварительно перебирает источники записи из массива AUDIO_SOURCES
+	 * 
+	 * @param source
+	 *            Предпочитаемый источник записи. Если он не поддерживается (вызывается исключение), выбирается следующий из массива AUDIO_SOURCES.
+	 * @param file
+	 *            Файл для записи
+	 * @param max_duration
+	 *            Максимальная длительность записи в миллисекундах
+	 * @throws IOException
+	 *             Если ни один источник записи не сработал.
+	 */
+	public void startRecorder(int source, File file, int max_duration) throws IOException {
+		for (int s : AUDIO_SOURCES) {
+			if (s >= source) {
+				reset();
+				setAudioSource(s);
+				setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+				setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+				setMaxDuration(max_duration);
+				setOutputFile(file.getAbsolutePath());
+				try {
+					prepare();
+					start();
+					return;
+				} catch (Exception e) {
+				}
+			}
+		}
+		throw new IOException("Error while start media recorder!");
+	}
 
 	@Override
 	public void start() throws IllegalStateException {
