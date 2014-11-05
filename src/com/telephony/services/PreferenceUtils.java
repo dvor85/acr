@@ -37,7 +37,11 @@ public final class PreferenceUtils {
 
 	public static final PreferenceUtils getInstance(final Context context) {
 		if (sInstance == null) {
-			sInstance = new PreferenceUtils(context.getApplicationContext());
+			synchronized (PreferenceUtils.class) {
+				if (sInstance == null) {
+					sInstance = new PreferenceUtils(context.getApplicationContext());
+				}
+			}
 		}
 		return sInstance;
 	}
@@ -118,7 +122,7 @@ public final class PreferenceUtils {
 		String res = null;
 		try {
 			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
-		} catch (Exception e) {			
+		} catch (Exception e) {
 		}
 		return res;
 	}

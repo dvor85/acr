@@ -108,7 +108,7 @@ public class CallRecordService extends Service {
 
 					if ((command == STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
 						myFileName = getFilename();
-						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_CALL, myFileName, (int) (Utils.HOUR * 6));						
+						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_CALL, myFileName, (int) (Utils.HOUR * 6));
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							public void onError(MediaRecorder mr, int what, int extra) {
@@ -146,9 +146,6 @@ public class CallRecordService extends Service {
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
-
-						//recorder.prepare();
-						//recorder.start();
 					}
 					break;
 
@@ -214,7 +211,7 @@ public class CallRecordService extends Service {
 				stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 				running = true;
 				while (((line = stdout.readLine()) != null) && (running)) {
-					if (line.matches(".*GET_CURRENT_CALLS.*(ACTIVE).*")) {
+					if (line.matches(".*ACTIVE.*")) {
 						break;
 					}
 				}
@@ -233,7 +230,7 @@ public class CallRecordService extends Service {
 			}
 		}
 
-		void stop() {
+		synchronized void stop() {
 			if (running) {
 				running = false;
 				try {

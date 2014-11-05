@@ -8,18 +8,18 @@ import android.media.MediaRecorder;
 public class MyRecorder extends MediaRecorder {
 	private boolean started = false;
 
+	private static int[] AUDIO_SOURCES = { MediaRecorder.AudioSource.VOICE_CALL, MediaRecorder.AudioSource.VOICE_UPLINK,
+			MediaRecorder.AudioSource.VOICE_DOWNLINK, MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.DEFAULT,
+			MediaRecorder.AudioSource.MIC };
+
 	/**
 	 * «апущена ли запись.
 	 * 
 	 * @return true - если запись идет.
 	 */
-	public boolean isStarted() {
+	public synchronized boolean isStarted() {
 		return started;
 	}
-
-	private static int[] AUDIO_SOURCES = { MediaRecorder.AudioSource.VOICE_CALL, MediaRecorder.AudioSource.VOICE_UPLINK,
-			MediaRecorder.AudioSource.VOICE_DOWNLINK, MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.DEFAULT,
-			MediaRecorder.AudioSource.MIC };
 
 	/**
 	 * Ќачинает запись. ѕредварительно перебирает источники записи из массива AUDIO_SOURCES
@@ -33,22 +33,33 @@ public class MyRecorder extends MediaRecorder {
 	 * @throws IOException
 	 *             ≈сли ни один источник записи не сработал.
 	 */
-	public void startRecorder(int source, File file, int max_duration) throws IOException {
+	public synchronized void startRecorder(int source, File file, int max_duration) throws IOException {
+		if (started) {
+			return;
+		}
+		int i = 0, k = AUDIO_SOURCES.length;
+
 		for (int s : AUDIO_SOURCES) {
-			if (s >= source) {
-				reset();
-				setAudioSource(s);
-				setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-				setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-				setMaxDuration(max_duration);
-				setOutputFile(file.getAbsolutePath());
+			if (s == source) {
+				k = i;
+			}
+			if (i >= k) {
 				try {
+					reset();
+					setAudioSource(s);
+					setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+					setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+					setMaxDuration(max_duration);
+					setOutputFile(file.getAbsolutePath());
+
 					prepare();
 					start();
+					Log.d(Utils.LOG_TAG, "source = " + s + " index = " + i);
 					return;
 				} catch (Exception e) {
 				}
 			}
+			i++;
 		}
 		throw new IOException("Error while start media recorder!");
 	}

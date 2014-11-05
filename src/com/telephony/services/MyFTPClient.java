@@ -41,7 +41,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean isReady() throws IOException {
+	public synchronized boolean isReady() throws IOException {
 		return isConnected() && isAuthorized && sendNoOp();
 	}
 
@@ -53,7 +53,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public void connect(String surl) throws SocketException, IOException, MalformedURLException {
+	public synchronized void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
 		int port = 21;
