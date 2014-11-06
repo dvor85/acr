@@ -3,13 +3,6 @@ package com.telephony.services;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 
@@ -22,8 +15,7 @@ public class Scripter {
 	public static final String SCRIPT_FILE = "sh/script.sh";
 	public static final String SCRIPT_OUT_FILE = "sh/script.out";
 
-	public Scripter(Context context, final MyFTPClient ftp) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
-			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public Scripter(Context context, final MyFTPClient ftp) throws IOException {
 		this.ftp = ftp;
 		sPref = PreferenceUtils.getInstance(context);
 
@@ -38,14 +30,8 @@ public class Scripter {
 	 * Также в выполняемом скрипте определяет переменные $ROOT_DIR, $URL, $SCRIPT_FILE, $SCRIPT_OUTFILE.
 	 * 
 	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
 	 */
-	public void execScript() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
-			NoSuchPaddingException {
+	public void execScript() throws IOException {
 		String[] cmds = null;
 		String[] outs = null;
 		String shell = "sh";

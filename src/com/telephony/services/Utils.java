@@ -1,6 +1,5 @@
 package com.telephony.services;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
@@ -141,6 +140,7 @@ public class Utils {
 		if (list != null) {
 			for (File f : list) {
 				if (f.isDirectory()) {
+					sb.add(f);
 					sb.addAll(Arrays.asList(rlistFiles(f, filter)));
 				} else {
 					sb.add(f);

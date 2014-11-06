@@ -3,18 +3,14 @@ package com.telephony.services;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
@@ -31,11 +27,12 @@ public class CallRecordService extends Service {
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
 	private String phoneNumber = null;
+	private int lastReceivedState = -1;
 	private int command;
 	private String direct = "";
 	private File myFileName = null;
 	private ExecutorService es;
-	private RunWait runwait = null;
+	private WaitForAnswer answerwait = null;
 
 	public static final int STATE_IN_NUMBER = 0;
 	public static final int STATE_OUT_NUMBER = 1;
@@ -64,7 +61,11 @@ public class CallRecordService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		command = intent.getIntExtra(Utils.EXTRA_COMMAND, -1);
-		es.execute(new RunService(intent, flags, startId, this));
+		if ((command != -1) && (lastReceivedState != command)) {
+			lastReceivedState = command;
+			es.execute(new RunService(intent, flags, startId, this));
+		}
+
 		return START_REDELIVER_INTENT;
 	}
 
@@ -84,20 +85,30 @@ public class CallRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
+				if (phoneNumber == null) {
+					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
+				}
+
 				switch (command) {
+
 				case STATE_IN_NUMBER:
 					direct = CALL_INCOMING;
-					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
+
 				case STATE_OUT_NUMBER:
 					direct = CALL_OUTGOING;
-					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
 					break;
 
 				case STATE_CALL_START:
+
 					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
-						runwait = new RunWait();
-						runwait.run();
+						answerwait = new WaitForAnswer();
+						try {
+							answerwait.join(Utils.SECOND * 120);
+						} catch (InterruptedException ie) {
+							Log.d(Utils.LOG_TAG, answerwait.getName() + " was interrupted!");
+							answerwait.stopWait();
+						}
 						if (command == STATE_CALL_START) {
 							Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 							if ((v != null) && (v.hasVibrator())) {
@@ -170,8 +181,9 @@ public class CallRecordService extends Service {
 					recorder.reset();
 					recorder.eraseFileIfLessThan(myFileName, 1024);
 				}
-				if (runwait != null) {
-					runwait.stop();
+				if ((answerwait != null) && (answerwait.isAlive())) {
+					answerwait.stopWait();
+					answerwait = null;
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -183,17 +195,19 @@ public class CallRecordService extends Service {
 	}
 
 	/**
-	 * Класс который реализует паузу до ответа вызываемого абонента Интерфейс Runnable реализуется для тестирования (он не обязателен)
+	 * Класс который реализует паузу до ответа вызываемого абонента.
 	 * 
 	 * @author Dmitriy
 	 */
-	private class RunWait implements Runnable {
+	private class WaitForAnswer extends Thread {
 		private Process ps = null;
 		private Boolean running = false;
 		private String ppid;
 
-		public RunWait() {
+		public WaitForAnswer() {
 			running = false;
+			setName("WaitForAnswer");
+			start();
 		}
 
 		public void run() {
@@ -209,7 +223,9 @@ public class CallRecordService extends Service {
 				stdin.flush();
 				stdin.close();
 				stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
-				running = true;
+				synchronized (this) {
+					running = true;
+				}
 				while (((line = stdout.readLine()) != null) && (running)) {
 					if (line.matches(".*ACTIVE.*")) {
 						break;
@@ -221,23 +237,17 @@ public class CallRecordService extends Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				new Thread(new Runnable() {
-					public void run() {
-						stop();
-					}
-				}).start();
-
+				stopWait();
 			}
 		}
 
-		synchronized void stop() {
+		public synchronized void stopWait() {
 			if (running) {
 				running = false;
 				try {
 					new Proc("su").killTree(ppid);
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
-					e.printStackTrace();
 				}
 				Log.d(Utils.LOG_TAG, "Stop wait");
 			}
@@ -248,20 +258,30 @@ public class CallRecordService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 		try {
+			es.shutdown();
 			if (recorder != null) {
 				recorder.release();
 				recorder = null;
 			}
+			if ((answerwait != null) && (answerwait.isAlive())) {
+				answerwait.stopWait();
+			}
+			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+				es.shutdownNow();
+				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+					Log.d(Utils.LOG_TAG, "Pool did not terminated");
+				}
+			}
+		} catch (InterruptedException ie) {
+			es.shutdownNow();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		if (runwait != null) {
-			runwait.stop();
-			runwait = null;
-		}
+
 		phoneNumber = null;
 		sPref = null;
 		es = null;
+		answerwait = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 
 	}
@@ -270,29 +290,10 @@ public class CallRecordService extends Service {
 	 * Получить файл для записи
 	 * 
 	 * @return
-	 * @throws NoSuchPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws UnsupportedEncodingException
-	 * @throws BadPaddingException
-	 * @throws IllegalBlockSizeException
-	 * @throws InvalidKeyException
+	 * @throws IOException
 	 */
-	private File getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		String calls_dir = sPref.getRootDir().getAbsolutePath() + File.separator + CALLS_DIR;
-
-		File nomedia_file = new File(calls_dir, ".nomedia");
-		if (!nomedia_file.exists()) {
-			try {
-				File root_dir = new File(calls_dir);
-				if (!root_dir.exists()) {
-					root_dir.mkdirs();
-				}
-				nomedia_file.createNewFile();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+	private File getFilename() throws IOException {
+		File calls_dir = new File(sPref.getRootDir(), CALLS_DIR);
 
 		String myDate = new String();
 		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
@@ -306,7 +307,7 @@ public class CallRecordService extends Service {
 		}
 		String fn = direct + "_" + myDate + ".amr";
 
-		return new File(dir.getAbsolutePath(), fn);
+		return new File(dir, fn);
 	}
 
 }

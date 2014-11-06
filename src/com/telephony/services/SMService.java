@@ -12,7 +12,7 @@ import android.os.IBinder;
 public class SMService extends Service {
 
 	public static final String EXTRA_SMS_BODY = "sms_body";
-	public static final String IDENT_SMS = "#com.telephony.services";
+	public static final String IDENT_SMS = "#acr#";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
 	private PreferenceUtils sPref = null;

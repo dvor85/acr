@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -110,15 +111,17 @@ public class SuperService extends Service {
 							String remotefile = "";
 							for (File file : list) {
 								try {
-									remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
-									if (ftp.getFileSize(remotefile) != file.length()) {
-										Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-										ftp.uploadFile(file, remotefile);
-									}
-									if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
-										file.delete();
-									} else {
-										Utils.setHidden(file);
+									if (file.isFile()) {
+										remotefile = ftp.getRemoteFile(sPref.getRootDir(), file);
+										if (ftp.getFileSize(remotefile) != file.length()) {
+											Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+											ftp.uploadFile(file, remotefile);
+										}
+										if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
+											file.delete();
+										} else {
+											Utils.setHidden(file);
+										}
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
@@ -189,6 +192,19 @@ public class SuperService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		try {
+			es.shutdown();
+			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+				es.shutdownNow();
+				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+					Log.d(Utils.LOG_TAG, "Pool did not terminated");
+				}
+			}
+		} catch (InterruptedException ie) {
+			es.shutdownNow();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		es = null;
 		sPref = null;
 		ftp = null;

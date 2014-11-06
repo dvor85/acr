@@ -1,6 +1,7 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +32,7 @@ public final class PreferenceUtils {
 	private PreferenceUtils(final Context context) {
 		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 		default_root_dir = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
-				+ File.separator + "." + context.getApplicationContext().getPackageName() + File.separator + "files";
+				+ File.separator + ".com.acr.files" + File.separator + "files";
 		key = Utils.getDeviceId(context);
 	}
 
@@ -50,27 +51,22 @@ public final class PreferenceUtils {
 	 * Получить корневую директрорию программы
 	 * 
 	 * @return Корневая директория программы
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
+	 * @throws IOException
 	 */
-	public File getRootDir() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
+	public File getRootDir() throws IOException {
 		File root_dir = new File(default_root_dir);
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
 				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, ""), key));
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			setRootDir(default_root_dir);
-
 		} finally {
-			if (!root_dir.exists()) {
-				root_dir.mkdirs();
+			File nomedia_file = new File(root_dir, ".nomedia");
+			if (!nomedia_file.exists()) {
+				if (!root_dir.exists()) {
+					root_dir.mkdirs();
+				}
+				nomedia_file.createNewFile();
 			}
 		}
 
@@ -111,12 +107,6 @@ public final class PreferenceUtils {
 	 * Ссылка на FTPS сервер. Храниться в зашифрованном виде.
 	 * 
 	 * @return Расшифрованная ссылка на FTPS сервер или исключение (<b>default</b> = исключение)
-	 * @throws InvalidKeyException
-	 * @throws UnsupportedEncodingException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
 	 */
 	public String getRemoteUrl() {
 		String res = null;

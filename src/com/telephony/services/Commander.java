@@ -1,5 +1,6 @@
 package com.telephony.services;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.security.InvalidKeyException;
@@ -62,13 +63,13 @@ public class Commander {
 	 * @throws InvalidKeyException
 	 * @throws IllegalBlockSizeException
 	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchPaddingException
+	 * @throws IOException
 	 */
 	public String exec(String cmd_param) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, IllegalArgumentException,
 			NoSuchMethodException, InvocationTargetException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
-			UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException {
+			NoSuchAlgorithmException, NoSuchPaddingException, IOException {
 
 		StringBuilder res = new StringBuilder();
 

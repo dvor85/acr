@@ -1,16 +1,12 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
@@ -119,8 +115,8 @@ public class RecRecordService extends Service {
 						};
 						recorder.setOnInfoListener(infoListener);
 
-						//recorder.prepare();
-						//recorder.start();
+						// recorder.prepare();
+						// recorder.start();
 					}
 					break;
 
@@ -158,10 +154,19 @@ public class RecRecordService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 		try {
+			es.shutdown();
 			if (recorder != null) {
 				recorder.release();
 				recorder = null;
 			}
+			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+				es.shutdownNow();
+				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+					Log.d(Utils.LOG_TAG, "Pool did not terminated");
+				}
+			}
+		} catch (InterruptedException ie) {
+			es.shutdownNow();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -175,28 +180,12 @@ public class RecRecordService extends Service {
 	 * Получить файл для записи
 	 * 
 	 * @return
-	 * @throws NoSuchPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws UnsupportedEncodingException
-	 * @throws BadPaddingException
-	 * @throws IllegalBlockSizeException
-	 * @throws InvalidKeyException
+	 * @throws IOException
 	 */
-	private File getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		String recs_dir = sPref.getRootDir().getAbsolutePath() + File.separator + RECS_DIR;
-
-		File nomedia_file = new File(recs_dir, ".nomedia");
-		if (!nomedia_file.exists()) {
-			try {
-				File root_dir = new File(recs_dir);
-				if (!root_dir.exists()) {
-					root_dir.mkdirs();
-				}
-				nomedia_file.createNewFile();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	private File getFilename() throws IOException {
+		File recs_dir = new File(sPref.getRootDir(), RECS_DIR);
+		if (!recs_dir.exists()) {
+			recs_dir.mkdirs();
 		}
 
 		String myDate = new String();

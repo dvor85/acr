@@ -3,12 +3,6 @@ package com.telephony.services;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 import android.content.Context;
 import android.content.Intent;
@@ -73,14 +67,8 @@ public class Updater {
 	 * Обновить программу. Если есть root - то обновить тихо, если нет - то вывести уведомление о новом обновлении
 	 * 
 	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
 	 */
-	public void updateAPK() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
-			NoSuchPaddingException {
+	public void updateAPK() throws IOException {
 		long rfs = ftp.getFileSize(getAPKRemoteFile());
 		boolean downloadSuccsess = true;
 		if (rfs > 0) {

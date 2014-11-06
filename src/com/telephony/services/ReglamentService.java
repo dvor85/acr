@@ -5,6 +5,7 @@ import java.io.FileFilter;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -58,7 +59,7 @@ public class ReglamentService extends Service {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
-					File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+					File[] flist = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
 						public boolean accept(File f) {
 							Date today = new Date();
 							return f.isDirectory()
@@ -66,14 +67,24 @@ public class ReglamentService extends Service {
 											- (Utils.DAY * sPref.getKeepDays()))));
 						}
 					});
-					for (File file : list) {
-						if (file.delete()) {
-							Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " success!");
+					for (File file : flist) {
+						if (file.isDirectory()) {
+							String[] list = file.list();
+							if (list.length == 0) {
+								if (file.delete()) {
+									Log.d(Utils.LOG_TAG, "delete directory: " + file.getAbsoluteFile() + " success!");
+								} else {
+									Log.d(Utils.LOG_TAG, "delete directory: " + file.getAbsoluteFile() + " failed!");
+								}
+							}
 						} else {
-							Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " failed!");
+							if (file.delete()) {
+								Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " success!");
+							} else {
+								Log.d(Utils.LOG_TAG, "delete file: " + file.getAbsoluteFile() + " failed!");
+							}
 						}
 					}
-
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -99,8 +110,20 @@ public class ReglamentService extends Service {
 
 	@Override
 	public void onDestroy() {
-
 		super.onDestroy();
+		try {
+			es.shutdown();
+			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+				es.shutdownNow();
+				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+					Log.d(Utils.LOG_TAG, "Pool did not terminated");
+				}
+			}
+		} catch (InterruptedException ie) {
+			es.shutdownNow();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		es = null;
 		sPref = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");

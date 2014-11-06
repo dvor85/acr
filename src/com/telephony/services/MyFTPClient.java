@@ -175,7 +175,7 @@ public class MyFTPClient extends FTPSClient {
 			if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
 				local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath()));
 			} else {
-				local_dir = new File(root_dir.getAbsolutePath(), rf.getParent());
+				local_dir = new File(root_dir, rf.getParent());
 			}
 		} else {
 			local_dir = root_dir;
@@ -183,7 +183,7 @@ public class MyFTPClient extends FTPSClient {
 		if (!local_dir.exists()) {
 			local_dir.mkdirs();
 		}
-		File local_file = new File(local_dir.getAbsolutePath(), rf.getName());
+		File local_file = new File(local_dir, rf.getName());
 		return local_file;
 	}
 
