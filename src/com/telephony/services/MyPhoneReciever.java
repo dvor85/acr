@@ -24,8 +24,8 @@ public class MyPhoneReciever extends BroadcastReceiver {
 			phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
 			Intent myIntent = new Intent(context, CallRecordService.class);
 			myIntent.putExtra(Utils.EXTRA_PHONE_NUMBER, phoneNumber);
-			
-			if (TelephonyManager.EXTRA_STATE_RINGING.equals(intent.getStringExtra(TelephonyManager.EXTRA_STATE))) {		
+
+			if (TelephonyManager.EXTRA_STATE_RINGING.equals(intent.getStringExtra(TelephonyManager.EXTRA_STATE))) {
 				myIntent.putExtra(Utils.EXTRA_COMMAND, CallRecordService.STATE_IN_NUMBER);
 				context.startService(myIntent);
 

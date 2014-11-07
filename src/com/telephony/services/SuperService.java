@@ -71,6 +71,7 @@ public class SuperService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			long rfs = -1;
 			try {
@@ -102,6 +103,7 @@ public class SuperService extends Service {
 
 						case COMMAND_RUN_UPLOAD:
 							File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+								@Override
 								public boolean accept(File f) {
 									Date today = new Date();
 									return f.isDirectory()

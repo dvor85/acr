@@ -1,7 +1,6 @@
 package com.telephony.services;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;

@@ -58,6 +58,7 @@ public class SMService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);

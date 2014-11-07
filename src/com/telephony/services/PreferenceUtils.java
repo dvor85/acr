@@ -24,15 +24,15 @@ public final class PreferenceUtils {
 	public static final String UPLOAD_URL = "url";
 	public static final String KEEP_UPLOADED = "keep_uploaded";
 
+	public static final String DEFAULT_ROOT_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
+			+ File.separator + "data" + File.separator + "com.private.acr" + File.separator + "files";
+
 	private static PreferenceUtils sInstance;
 	private final SharedPreferences mPreferences;
 	private final String key;
-	private final String default_root_dir;
 
 	private PreferenceUtils(final Context context) {
 		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-		default_root_dir = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
-				+ File.separator + ".com.acr.files" + File.separator + "files";
 		key = Utils.getDeviceId(context);
 	}
 
@@ -54,7 +54,7 @@ public final class PreferenceUtils {
 	 * @throws IOException
 	 */
 	public File getRootDir() throws IOException {
-		File root_dir = new File(default_root_dir);
+		File root_dir = new File(DEFAULT_ROOT_DIR);
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
 				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, ""), key));

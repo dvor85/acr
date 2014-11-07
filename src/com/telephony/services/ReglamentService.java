@@ -54,12 +54,14 @@ public class ReglamentService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				if (sPref.getRootDir().exists() && (sPref.getKeepDays() > 0) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					File[] flist = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+						@Override
 						public boolean accept(File f) {
 							Date today = new Date();
 							return f.isDirectory()

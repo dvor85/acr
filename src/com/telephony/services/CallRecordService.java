@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +81,7 @@ public class CallRecordService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
@@ -122,6 +122,7 @@ public class CallRecordService extends Service {
 						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_CALL, myFileName, (int) (Utils.HOUR * 6));
 
 						OnErrorListener errorListener = new OnErrorListener() {
+							@Override
 							public void onError(MediaRecorder mr, int what, int extra) {
 								switch (what) {
 								case MediaRecorder.MEDIA_ERROR_SERVER_DIED:
@@ -139,6 +140,7 @@ public class CallRecordService extends Service {
 						recorder.setOnErrorListener(errorListener);
 
 						OnInfoListener infoListener = new OnInfoListener() {
+							@Override
 							public void onInfo(MediaRecorder mr, int what, int extra) {
 								switch (what) {
 								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED:
@@ -210,6 +212,7 @@ public class CallRecordService extends Service {
 			start();
 		}
 
+		@Override
 		public void run() {
 			BufferedReader stdout = null;
 			BufferedWriter stdin = null;
