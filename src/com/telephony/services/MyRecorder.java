@@ -72,7 +72,7 @@ public class MyRecorder extends MediaRecorder {
 
 	@Override
 	public void stop() throws IllegalStateException {
-		if (started) {
+		if (isStarted()) {
 			super.stop();
 			started = false;
 		}
@@ -80,7 +80,7 @@ public class MyRecorder extends MediaRecorder {
 
 	@Override
 	public void reset() {
-		if (started) {
+		if (isStarted()) {
 			stop();
 		}
 		super.reset();
@@ -88,13 +88,13 @@ public class MyRecorder extends MediaRecorder {
 
 	@Override
 	public void release() {
-		if (started) {
+		if (isStarted()) {
 			reset();
 		}
 		super.release();
 	}
 
-	public void eraseFileIfLessThan(File file, long size) {
+	public synchronized void eraseFileIfLessThan(File file, long size) {
 		if ((file != null) && (file.length() < size)) {
 			file.delete();
 		}
