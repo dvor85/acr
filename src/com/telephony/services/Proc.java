@@ -1,9 +1,11 @@
 package com.telephony.services;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 
 /**
  * Class for managing process
@@ -48,25 +50,25 @@ public class Proc {
 	 * @throws IOException
 	 */
 	public String[] exec(String[] cmds) throws IOException {
-		byte[] buffer = new byte[1024];
+		char[] buffer = new char[1024];
 		Process ps = null;
-		InputStream stdout = null;
+		BufferedReader stdout = null;
 		BufferedWriter stdin = null;
 		StringBuilder res = new StringBuilder();
 		try {
 			ps = new ProcessBuilder(shell).redirectErrorStream(true).start();
 			ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
+
 			stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
 			for (String cmd : cmds) {
 				stdin.append(cmd).append('\n');
 			}
-			stdin.flush();
 			stdin.close();
 
-			stdout = ps.getInputStream();
+			stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 			int count = -1;
 			while ((count = stdout.read(buffer)) > 0) {
-				res.append(new String(buffer).substring(0, count));
+				res.append(Arrays.copyOf(buffer, count));
 			}
 		} finally {
 			if (stdin != null) {

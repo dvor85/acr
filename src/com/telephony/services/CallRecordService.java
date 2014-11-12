@@ -107,8 +107,20 @@ public class CallRecordService extends Service {
 							answerwait.join(Utils.SECOND * 120);
 						} catch (InterruptedException ie) {
 							Log.d(Utils.LOG_TAG, answerwait.getName() + " was interrupted!");
-							answerwait.stopWait();
+						} finally {
+							new Thread(new Runnable() {
+								@Override
+								public void run() {
+									try {
+										if (answerwait != null) {
+											answerwait.stopWait();
+										}
+									} catch (Exception e) {
+									}
+								}
+							}).start();
 						}
+
 						if (command == STATE_CALL_START) {
 							Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 							if ((v != null) && (v.hasVibrator())) {
@@ -178,20 +190,16 @@ public class CallRecordService extends Service {
 
 		public void stop() {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
-			try {
-				if (recorder != null) {
+
+			if (recorder != null) {
+				try {
 					recorder.reset();
-					recorder.eraseFileIfLessThan(myFileName, 1024);
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				if ((answerwait != null) && (answerwait.isAlive())) {
-					answerwait.stopWait();
-					answerwait = null;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-				stopSelf(startId);
+				recorder.eraseFileIfLessThan(myFileName, 1024);
 			}
+			stopSelf(startId);
 		}
 
 	}
@@ -218,28 +226,40 @@ public class CallRecordService extends Service {
 			BufferedWriter stdin = null;
 			String line;
 			try {
-				ps = new ProcessBuilder("su").redirectErrorStream(true).start();
-				ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
-				stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
-				stdin.append("logcat -c -b radio").append('\n');
-				stdin.append("logcat -b radio").append('\n');
-				stdin.flush();
-				stdin.close();
-				stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
 				synchronized (this) {
-					running = true;
+					if (!running) {
+						ps = new ProcessBuilder("su").redirectErrorStream(true).start();
+						ppid = ps.toString().substring(ps.toString().indexOf('=') + 1, ps.toString().indexOf(']'));
+						stdin = new BufferedWriter(new OutputStreamWriter(ps.getOutputStream()));
+						stdin.append("logcat -c -b radio").append('\n');
+						stdin.append("logcat -b radio").append('\n');
+						stdin.close();
+						stdout = new BufferedReader(new InputStreamReader(ps.getInputStream()));
+						running = true;
+					}
 				}
 				while (((line = stdout.readLine()) != null) && (running)) {
 					if (line.matches(".*ACTIVE.*")) {
 						break;
 					}
 				}
-				if (stdout != null) {
-					stdout.close();
-				}
+
 			} catch (Exception e) {
-				e.printStackTrace();
 			} finally {
+				if (stdin != null) {
+					try {
+						stdin.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				if (stdout != null) {
+					try {
+						stdout.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 				stopWait();
 			}
 		}
@@ -252,7 +272,7 @@ public class CallRecordService extends Service {
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 				}
-				Log.d(Utils.LOG_TAG, "Stop wait");
+				Log.d(Utils.LOG_TAG, "Stop " + getName());
 			}
 		}
 	}
@@ -260,13 +280,19 @@ public class CallRecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		try {
-			es.shutdown();
-			if (recorder != null) {
+
+		es.shutdown();
+
+		if (recorder != null) {
+			try {
 				recorder.release();
-				recorder = null;
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			if ((answerwait != null) && (answerwait.isAlive())) {
+		}
+
+		try {
+			if (answerwait != null) {
 				answerwait.stopWait();
 			}
 			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
@@ -281,10 +307,6 @@ public class CallRecordService extends Service {
 			e.printStackTrace();
 		}
 
-		phoneNumber = null;
-		sPref = null;
-		es = null;
-		answerwait = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 
 	}

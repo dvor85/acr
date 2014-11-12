@@ -65,38 +65,41 @@ public class MyRecorder extends MediaRecorder {
 	}
 
 	@Override
-	public void start() throws IllegalStateException {
+	public synchronized void start() throws IllegalStateException {
 		super.start();
 		started = true;
 	}
 
 	@Override
-	public void stop() throws IllegalStateException {
-		if (isStarted()) {
+	public synchronized void stop() throws IllegalStateException {
+		if (started) {
 			super.stop();
 			started = false;
 		}
 	}
 
 	@Override
-	public void reset() {
-		if (isStarted()) {
+	public synchronized void reset() {
+		if (started) {
 			stop();
 		}
 		super.reset();
 	}
 
 	@Override
-	public void release() {
-		if (isStarted()) {
+	public synchronized void release() {
+		if (started) {
 			reset();
 		}
 		super.release();
 	}
 
 	public synchronized void eraseFileIfLessThan(File file, long size) {
-		if ((file != null) && (file.length() < size)) {
-			file.delete();
+		try {
+			if ((file != null) && (file.length() < size)) {
+				file.delete();
+			}
+		} catch (Exception e) {
 		}
 	}
 

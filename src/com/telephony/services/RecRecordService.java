@@ -116,9 +116,6 @@ public class RecRecordService extends Service {
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
-
-						// recorder.prepare();
-						// recorder.start();
 					}
 					break;
 
@@ -140,11 +137,13 @@ public class RecRecordService extends Service {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			try {
 				if (recorder != null) {
-					recorder.reset();
+					try {
+						recorder.reset();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					recorder.eraseFileIfLessThan(myFileName, 1024);
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
 			} finally {
 				stopSelf(startId);
 			}
@@ -155,12 +154,16 @@ public class RecRecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		try {
-			es.shutdown();
-			if (recorder != null) {
+
+		es.shutdown();
+		if (recorder != null) {
+			try {
 				recorder.release();
-				recorder = null;
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
+		}
+		try {
 			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
 				es.shutdownNow();
 				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {

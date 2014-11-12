@@ -1,54 +1,32 @@
 package com.telephony.services;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 public class MyProperties extends Properties {
 
-	public synchronized void load(String instr) throws IOException {
-		InputStream in = null;
-		try {
-			in = new ByteArrayInputStream(instr.getBytes("UTF8"));
-			super.load(in);
-		} finally {
-			if (in != null) {
-				in.close();
-			}
-		}
-	}
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4158587047003541874L;
 
 	public Integer getIntProperty(String name) {
-		if (super.containsKey(name)) {
-			return Integer.parseInt(super.getProperty(name));
-		} else {
-			return null;
-		}
+		return Integer.valueOf(super.getProperty(name));		
 	}
 
 	public Integer getIntProperty(String name, Integer defaultValue) {
-		return Integer.parseInt(super.getProperty(name, defaultValue.toString()));
+		return Integer.valueOf(super.getProperty(name, defaultValue.toString()));
 	}
 
 	public Boolean getBoolProperty(String name) {
-		if (super.containsKey(name)) {
-			return Boolean.parseBoolean(super.getProperty(name));
-		} else {
-			return null;
-		}
+		return Boolean.valueOf(super.getProperty(name));		
 	}
 
-	public Boolean getBoolProperty(String name, Integer defaultValue) {
+	public Boolean getBoolProperty(String name, Boolean defaultValue) {
 		return Boolean.parseBoolean(super.getProperty(name, defaultValue.toString()));
 	}
 
 	public String[] getStringsProperty(String name) {
-		if (super.containsKey(name)) {
-			return super.getProperty(name).split(" *; *");
-		} else {
-			return null;
-		}
+		return (super.containsKey(name))?super.getProperty(name).split(" *; *"):null;
 	}
 
 	public void setIntProperty(String name, Integer value) {

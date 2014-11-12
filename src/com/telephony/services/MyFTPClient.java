@@ -20,8 +20,20 @@ public class MyFTPClient extends FTPSClient {
 
 	private URI url;
 	private boolean isAuthorized = false;
+	private static MyFTPClient sInstance;
 
-	public MyFTPClient() {
+	public static final MyFTPClient getInstance() {
+		if (sInstance == null) {
+			synchronized (MyFTPClient.class) {
+				if (sInstance == null) {
+					sInstance = new MyFTPClient();
+				}
+			}
+		}
+		return sInstance;
+	}
+
+	private MyFTPClient() {
 		super(false);
 		FTPClientConfig config = new FTPClientConfig(FTPClientConfig.SYST_UNIX);
 		config.setServerLanguageCode("ru");
@@ -31,7 +43,6 @@ public class MyFTPClient extends FTPSClient {
 		setAutodetectUTF8(true);
 
 		setTrustManager(TrustManagerUtils.getAcceptAllTrustManager());
-		isAuthorized = false;
 
 	}
 
@@ -53,58 +64,60 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	@Override
 	public synchronized void connect(String surl) throws SocketException, IOException, MalformedURLException {
 		String username = "";
 		String password = "";
 		int port = 21;
 		String proto = "";
 
-		try {
-			url = new URI(surl);
-		} catch (URISyntaxException e) {
-			throw new MalformedURLException(e.getMessage());
-		}
+		if (!isReady()) {
 
-		String authority = url.getUserInfo();
-		if (authority != null) {
-			String[] auth = authority.split(":");
-			username = auth[0];
-			password = auth[1];
-		}
-
-		proto = url.getScheme();
-		port = url.getPort();
-		if (port == -1) {
-			if ("ftp".equals(proto)) {
-				port = DEFAULT_PORT;
-			} else if ("ftps".equals(proto)) {
-				port = DEFAULT_FTPS_PORT;
+			try {
+				url = new URI(surl);
+			} catch (URISyntaxException e) {
+				throw new MalformedURLException(e.getMessage());
 			}
+
+			String authority = url.getUserInfo();
+			if (authority != null) {
+				String[] auth = authority.split(":");
+				username = auth[0];
+				password = auth[1];
+			}
+
+			proto = url.getScheme();
+			port = url.getPort();
+			if (port == -1) {
+				if ("ftp".equals(proto)) {
+					port = DEFAULT_PORT;
+				} else if ("ftps".equals(proto)) {
+					port = DEFAULT_FTPS_PORT;
+				}
+			}
+
+			setConnectTimeout(10000);
+			setDefaultTimeout(10000);
+			super.connect(url.getHost(), port);
+			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+				throw new IOException(getReplyString());
+			}
+
+			setSoTimeout(10000);
+			execPBSZ(0);
+			execPROT("P");
+
+			isAuthorized = super.login(username, password);
+			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+				throw new IOException(getReplyString());
+			}
+
+			enterLocalPassiveMode();
+			if (!FTPReply.isPositiveCompletion(getReplyCode())) {
+				throw new IOException(getReplyString());
+			}
+
+			setFileType(BINARY_FILE_TYPE);
 		}
-
-		setConnectTimeout(10000);
-		setDefaultTimeout(10000);
-		super.connect(url.getHost(), port);
-		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
-			throw new IOException(getReplyString());
-		}
-
-		setSoTimeout(10000);
-		execPBSZ(0);
-		execPROT("P");
-
-		isAuthorized = super.login(username, password);
-		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
-			throw new IOException(getReplyString());
-		}
-
-		enterLocalPassiveMode();
-		if (!FTPReply.isPositiveCompletion(getReplyCode())) {
-			throw new IOException(getReplyString());
-		}
-
-		setFileType(BINARY_FILE_TYPE);
 	}
 
 	/**
@@ -113,7 +126,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @param dir
 	 * @throws IOException
 	 */
-	public void mkdirs(String dir) throws IOException {
+	public synchronized void mkdirs(String dir) throws IOException {
 		String[] dirs = dir.split(File.separator);
 		try {
 			for (String d : dirs) {
@@ -153,13 +166,6 @@ public class MyFTPClient extends FTPSClient {
 		return remote_dir + File.separator + file.getName();
 	}
 
-	@Override
-	public boolean logout() throws IOException {
-		isAuthorized = false;
-		return super.logout();
-
-	}
-
 	/**
 	 * Возвращает файл в который будет закачан удаленный файл
 	 * 
@@ -188,7 +194,7 @@ public class MyFTPClient extends FTPSClient {
 		return local_file;
 	}
 
-	public boolean uploadFile(File local_file, String remotefile) throws IOException {
+	public synchronized boolean uploadFile(File local_file, String remotefile) throws IOException {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream(local_file);
@@ -212,7 +218,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean downloadFile(String remotefile, File local_file) throws IOException {
+	public synchronized boolean downloadFile(String remotefile, File local_file) throws IOException {
 		FileOutputStream out = null;
 		InputStream in = null;
 		try {
@@ -244,7 +250,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return Массив строк
 	 * @throws IOException
 	 */
-	public String[] downloadFileStrings(String remotefile) throws IOException {
+	public synchronized String[] downloadFileStrings(String remotefile) throws IOException {
 		byte[] buffer = new byte[1024];
 		StringBuilder res = new StringBuilder();
 		InputStream in = null;
@@ -281,7 +287,7 @@ public class MyFTPClient extends FTPSClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public long getFileSize(String remotefile) throws IOException {
+	public synchronized long getFileSize(String remotefile) throws IOException {
 		long fileSize = -1;
 
 		if (hasFeature("SIZE")) {
@@ -301,7 +307,13 @@ public class MyFTPClient extends FTPSClient {
 	}
 
 	@Override
-	public void disconnect() throws IOException {
+	public synchronized boolean logout() throws IOException {
+		isAuthorized = false;
+		return super.logout();
+	}
+
+	@Override
+	public synchronized void disconnect() throws IOException {
 		if (isConnected()) {
 			super.disconnect();
 		}

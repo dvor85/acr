@@ -14,7 +14,6 @@ import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -26,7 +25,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
@@ -79,36 +77,6 @@ public class Utils {
 	}
 
 	/**
-	 * Ждать подключение к интренету
-	 * 
-	 * @param context
-	 * @param wifiOnly
-	 * @param seconds
-	 *            - Время ожидания в секундах
-	 * @return Если интернет появился в течении seconds секунд, то true, иначе false
-	 * @throws InterruptedException
-	 */
-	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
-		int sec = 0;
-		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		while (sec < seconds) {
-			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-			if (activeNetwork != null && activeNetwork.isConnected()) {
-				if (wifiOnly) {
-					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
-						return true;
-					}
-				} else {
-					return true;
-				}
-			}
-			TimeUnit.SECONDS.sleep(1);
-			sec += 1;
-		}
-		return false;
-	}
-
-	/**
 	 * Получить статус sdcard
 	 * 
 	 * @return
@@ -126,13 +94,13 @@ public class Utils {
 	}
 
 	/**
-	 * Рекурсивный поиск файлов
+	 * Рекурсивный поиск файлов и директорий
 	 * 
 	 * @param root
 	 *            Директория для поиска
 	 * @param filter
 	 *            Фильтр поиска
-	 * @return Массив файлов
+	 * @return Массив директорий и файлов
 	 */
 	public static File[] rlistFiles(File root, FileFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();

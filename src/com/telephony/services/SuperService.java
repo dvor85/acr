@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.os.SystemClock;
 
@@ -28,8 +27,8 @@ public class SuperService extends Service {
 	public static final int COMMAND_RUN_UPLOAD = 3;
 	public static final int COMMAND_RUN_DOWNLOAD = 4;
 
-	private BroadcastReceiver internetReceiver;
-	private Internet internet;
+	private BroadcastReceiver connectionReceiver;
+	private Connection connection;
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 	private MyFTPClient ftp = null;
@@ -47,30 +46,21 @@ public class SuperService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		try {
-			es = Executors.newFixedThreadPool(1);
+			es = Executors.newFixedThreadPool(4);
 			sPref = PreferenceUtils.getInstance(this);
-
-			ftp = new MyFTPClient();
-			internet = new Internet(this, sPref.isWifiOnly());
-			internetReceiver = new BroadcastReceiver() {
-				private Internet internet;
-
+			connection = Connection.getInstance(this);
+			ftp = MyFTPClient.getInstance();
+			connectionReceiver = new BroadcastReceiver() {
 				@Override
 				public void onReceive(Context context, Intent intent) {
 					Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
-
-					synchronized (internet) {
-						internet.notifyAll();
+					synchronized (connection) {
+						connection.notifyAll();
 					}
 				}
+			};
 
-				public BroadcastReceiver putInternet(Internet internet) {
-					this.internet = internet;
-					return this;
-				}
-			}.putInternet(internet);
-
-			registerReceiver(internetReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+			registerReceiver(connectionReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -80,53 +70,10 @@ public class SuperService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+
 		es.execute(new RunService(intent, flags, startId, this));
 		return START_REDELIVER_INTENT;
 
-	}
-
-	public class Internet {
-
-		private boolean wifiOnly;
-		private ConnectivityManager cm;
-
-		public Internet(Context context, boolean wifiOnly) {
-			this.wifiOnly = wifiOnly;
-			cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		}
-
-		public Internet(Context context) {
-			this(context, false);
-		}
-
-		public synchronized boolean isReady() {
-			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-			if (activeNetwork != null && activeNetwork.isConnected()) {
-				if (wifiOnly) {
-					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
-						return true;
-					}
-				} else {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public synchronized boolean waitForInternet(long timeout) {
-			try {
-				while (!isReady()) {
-					long b = SystemClock.elapsedRealtime();
-					wait(timeout);
-					if ((SystemClock.elapsedRealtime() - b) >= timeout) {
-						Thread.currentThread().interrupt();
-					}
-				}
-			} catch (InterruptedException ie) {
-				return false;
-			}
-			return isReady();
-		}
 	}
 
 	private class RunService implements Runnable {
@@ -150,10 +97,9 @@ public class SuperService extends Service {
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
-						&& internet.waitForInternet(Utils.SECOND * 20)) {
-					if (!ftp.isReady()) {
-						ftp.connect(sPref.getRemoteUrl());
-					}
+						&& connection.waitForConnection(sPref.isWifiOnly(), Utils.SECOND * 20)) {
+
+					ftp.connect(sPref.getRemoteUrl());
 					if (ftp.isReady()) {
 						switch (command) {
 						case COMMAND_RUN_SCRIPTER:
@@ -163,12 +109,8 @@ public class SuperService extends Service {
 
 						case COMMAND_RUN_UPDATER:
 							upd = new Updater(context, ftp);
-							try {
-								if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-									upd.updateAPK();
-								}
-							} finally {
-								upd.free();
+							if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
+								upd.updateAPK();
 							}
 							break;
 
@@ -198,7 +140,7 @@ public class SuperService extends Service {
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
-									if (!(internet.isReady() && ftp.isReady())) {
+									if (!(connection.isConnected(sPref.isWifiOnly()) && ftp.isReady())) {
 										break;
 									}
 								}
@@ -224,7 +166,7 @@ public class SuperService extends Service {
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
-									if (!(internet.isReady() && ftp.isReady())) {
+									if (!(connection.isConnected(sPref.isWifiOnly()) && ftp.isReady())) {
 										break;
 									}
 								}
@@ -266,8 +208,9 @@ public class SuperService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 		try {
-			unregisterReceiver(internetReceiver);
 			es.shutdown();
+
+			unregisterReceiver(connectionReceiver);
 			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
 				es.shutdownNow();
 				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
