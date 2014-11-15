@@ -32,10 +32,6 @@ public class SuperService extends Service {
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 	private MyFTPClient ftp = null;
-	private Updater upd = null;
-	private Scripter scp = null;
-	private int command = 0;
-	private long interval = 0;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -77,10 +73,14 @@ public class SuperService extends Service {
 	}
 
 	private class RunService implements Runnable {
-		final Intent intent;
-		final int flags;
-		final int startId;
-		final Context context;
+		private final Intent intent;
+		private final int flags;
+		private final int startId;
+		private final Context context;
+		private Updater upd = null;
+		private Scripter scp = null;
+		private int command = 0;
+		private long interval = 0;
 
 		public RunService(Intent intent, int flags, int startId, Context context) {
 			this.intent = intent;
@@ -120,7 +120,8 @@ public class SuperService extends Service {
 								public boolean accept(File f) {
 									Date today = new Date();
 									return f.isDirectory()
-											|| (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
+											|| (!f.isHidden() && new Date(f.lastModified()).before(new Date(today
+													.getTime() - (Utils.MINUTE * 15))));
 								}
 							});
 							String remotefile = "";
@@ -132,7 +133,8 @@ public class SuperService extends Service {
 											Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
 											ftp.uploadFile(file, remotefile);
 										}
-										if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
+										if (!sPref.isKeepUploaded()
+												|| (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
 											file.delete();
 										} else {
 											Utils.setHidden(file);
@@ -158,7 +160,8 @@ public class SuperService extends Service {
 											file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
 											if (file != null) {
 												if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-													Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
+													Log.d(Utils.LOG_TAG,
+															"try download: " + fn + " to " + file.getAbsolutePath());
 													ftp.downloadFile(fn, file);
 												}
 											}
@@ -191,7 +194,10 @@ public class SuperService extends Service {
 					PendingIntent pi = PendingIntent.getService(context, 0, intent, 0);
 					am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + interval, pi);
 				}
-
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
 				if (stopSelfResult(startId)) {
 					if (ftp != null) {
 						ftp.disconnect();
@@ -200,7 +206,6 @@ public class SuperService extends Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 	}
 
@@ -209,8 +214,6 @@ public class SuperService extends Service {
 		super.onDestroy();
 		try {
 			es.shutdown();
-
-			unregisterReceiver(connectionReceiver);
 			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
 				es.shutdownNow();
 				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -221,11 +224,9 @@ public class SuperService extends Service {
 			es.shutdownNow();
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			unregisterReceiver(connectionReceiver);
 		}
-		es = null;
-		sPref = null;
-		ftp = null;
-		upd = null;
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 
