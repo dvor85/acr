@@ -108,17 +108,9 @@ public class CallRecordService extends Service {
 						} catch (InterruptedException ie) {
 							Log.d(Utils.LOG_TAG, answerwait.getName() + " was interrupted!");
 						} finally {
-							new Thread(new Runnable() {
-								@Override
-								public void run() {
-									try {
-										if (answerwait != null) {
-											answerwait.stopWait();
-										}
-									} catch (Exception e) {
-									}
-								}
-							}).start();
+							if (answerwait != null) {
+								answerwait.stopWait();
+							}
 						}
 
 						if (command == STATE_CALL_START) {
@@ -268,7 +260,7 @@ public class CallRecordService extends Service {
 			if (running) {
 				running = false;
 				try {
-					new Proc("su").killTree(ppid);
+					// new Proc("su").killTree(ppid);
 					Proc.processDestroy(ps);
 				} catch (Exception e) {
 				}
@@ -282,7 +274,6 @@ public class CallRecordService extends Service {
 		super.onDestroy();
 
 		es.shutdown();
-
 		if (recorder != null) {
 			try {
 				recorder.release();

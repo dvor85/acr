@@ -99,24 +99,14 @@ public class StartService extends Service {
 		}
 
 	}
+	
+	
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		try {
-			es.shutdown();
-			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
-				es.shutdownNow();
-				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
-					Log.d(Utils.LOG_TAG, "Pool did not terminated");
-				}
-			}
-		} catch (InterruptedException ie) {
-			es.shutdownNow();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		es = null;
+		
+		Utils.shutdownAndAwaitTermination(es, 5, TimeUnit.SECONDS);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

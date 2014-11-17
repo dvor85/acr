@@ -3,6 +3,7 @@ package com.telephony.services;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
@@ -104,14 +105,13 @@ public class SMService extends Service {
 		}
 
 	}
+	
+	
 
 	@Override
 	public void onDestroy() {
-
 		super.onDestroy();
-		cmdr = null;
-		es = null;
-		sPref = null;
+		Utils.shutdownAndAwaitTermination(es, 60, TimeUnit.SECONDS);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

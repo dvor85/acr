@@ -22,7 +22,7 @@ public class MyProperties extends Properties {
 	}
 
 	public Boolean getBoolProperty(String name, Boolean defaultValue) {
-		return Boolean.parseBoolean(super.getProperty(name, defaultValue.toString()));
+		return Boolean.valueOf(super.getProperty(name, defaultValue.toString()));
 	}
 
 	public String[] getStringsProperty(String name) {

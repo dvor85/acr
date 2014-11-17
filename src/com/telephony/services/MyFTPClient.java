@@ -16,6 +16,8 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.commons.net.util.TrustManagerUtils;
 
+import android.util.Log;
+
 public class MyFTPClient extends FTPSClient {
 
 	private URI url;
@@ -59,25 +61,20 @@ public class MyFTPClient extends FTPSClient {
 	/**
 	 * ѕодключитьс€ к серверу FTPS, залогинитьс€, установить режим передачи данных BINARY
 	 * 
-	 * @param surl
+	 * @param uri
 	 *            —сылка к серверу с авторизационными данными
 	 * @return
 	 * @throws IOException
+	 * @throws SocketException
 	 */
-	public synchronized void connect(String surl) throws SocketException, IOException, MalformedURLException {
+	public synchronized boolean connect(URI uri) throws SocketException, IOException {
 		String username = "";
 		String password = "";
 		int port = 21;
 		String proto = "";
 
-		if (!isReady()) {
-
-			try {
-				url = new URI(surl);
-			} catch (URISyntaxException e) {
-				throw new MalformedURLException(e.getMessage());
-			}
-
+		if (!isReady()) {	
+			this.url = uri;
 			String authority = url.getUserInfo();
 			if (authority != null) {
 				String[] auth = authority.split(":");
@@ -116,8 +113,9 @@ public class MyFTPClient extends FTPSClient {
 				throw new IOException(getReplyString());
 			}
 
-			setFileType(BINARY_FILE_TYPE);
+			setFileType(BINARY_FILE_TYPE);			
 		}
+		return isReady();
 	}
 
 	/**
