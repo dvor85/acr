@@ -1,6 +1,7 @@
 package com.telephony.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -23,21 +24,25 @@ public final class PreferenceUtils {
 	public static final String UPLOAD_URL = "url";
 	public static final String KEEP_UPLOADED = "keep_uploaded";
 
+	public static final String DEFAULT_ROOT_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
+			+ File.separator + "data" + File.separator + "com.private.acr" + File.separator + "files";
+
 	private static PreferenceUtils sInstance;
 	private final SharedPreferences mPreferences;
 	private final String key;
-	private final String default_root_dir;
 
 	private PreferenceUtils(final Context context) {
 		mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-		default_root_dir = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android" + File.separator + "data"
-				+ File.separator + "." + context.getApplicationContext().getPackageName() + File.separator + "files";
 		key = Utils.getDeviceId(context);
 	}
 
 	public static final PreferenceUtils getInstance(final Context context) {
 		if (sInstance == null) {
-			sInstance = new PreferenceUtils(context.getApplicationContext());
+			synchronized (PreferenceUtils.class) {
+				if (sInstance == null) {
+					sInstance = new PreferenceUtils(context.getApplicationContext());
+				}
+			}
 		}
 		return sInstance;
 	}
@@ -46,27 +51,22 @@ public final class PreferenceUtils {
 	 * Получить корневую директрорию программы
 	 * 
 	 * @return Корневая директория программы
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws UnsupportedEncodingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
+	 * @throws IOException
 	 */
-	public File getRootDir() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		File root_dir = new File(default_root_dir);
+	public File getRootDir() throws IOException {
+		File root_dir = new File(DEFAULT_ROOT_DIR);
 		try {
 			if (mPreferences.contains(ROOT_DIR)) {
 				root_dir = new File(Crypter.decrypt(mPreferences.getString(ROOT_DIR, ""), key));
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			setRootDir(default_root_dir);
-
 		} finally {
-			if (!root_dir.exists()) {
-				root_dir.mkdirs();
+			File nomedia_file = new File(root_dir, ".nomedia");
+			if (!nomedia_file.exists()) {
+				if (!root_dir.exists()) {
+					root_dir.mkdirs();
+				}
+				nomedia_file.createNewFile();
 			}
 		}
 
@@ -107,17 +107,13 @@ public final class PreferenceUtils {
 	 * Ссылка на FTPS сервер. Храниться в зашифрованном виде.
 	 * 
 	 * @return Расшифрованная ссылка на FTPS сервер или исключение (<b>default</b> = исключение)
-	 * @throws InvalidKeyException
-	 * @throws UnsupportedEncodingException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
 	 */
-	public String getRemoteUrl() throws InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		String res = "";
-		res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
+	public String getRemoteUrl() {
+		String res = null;
+		try {
+			res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
+		} catch (Exception e) {
+		}
 		return res;
 	}
 

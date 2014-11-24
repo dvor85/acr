@@ -2,6 +2,7 @@ package com.telephony.services;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -44,6 +45,7 @@ public class StartService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			Intent mi;
 			PendingIntent pi;
@@ -60,28 +62,28 @@ public class StartService extends Service {
 				// start Scripter service
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, SuperService.COMMAND_RUN_SCRIPTER).putExtra(
 						Utils.EXTRA_INTERVAL, Utils.HOUR);
-				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
+				mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.set(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 14, pi);
 
 				// start Updater service
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, SuperService.COMMAND_RUN_UPDATER).putExtra(
 						Utils.EXTRA_INTERVAL, Utils.DAY);
-				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
+				mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.set(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, pi);
 
 				// start Upload service
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, SuperService.COMMAND_RUN_UPLOAD).putExtra(
 						Utils.EXTRA_INTERVAL, Utils.HOUR);
-				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
+				mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.set(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, pi);
 
 				// start download service
 				mi = new Intent(context, SuperService.class).putExtra(Utils.EXTRA_COMMAND, SuperService.COMMAND_RUN_DOWNLOAD).putExtra(
 						Utils.EXTRA_INTERVAL, Utils.HOUR * 12);
-				mi.setData(Uri.parse((mi.toUri(Intent.URI_INTENT_SCHEME))));
+				mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
 				pi = PendingIntent.getService(context, 0, mi, 0);
 				am.set(AlarmManager.ELAPSED_REALTIME, Utils.MINUTE * 28, pi);
 
@@ -97,11 +99,14 @@ public class StartService extends Service {
 		}
 
 	}
+	
+	
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		es = null;
+		
+		Utils.shutdownAndAwaitTermination(es, 5, TimeUnit.SECONDS);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

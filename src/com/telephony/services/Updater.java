@@ -2,13 +2,7 @@ package com.telephony.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.io.StringReader;
 
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +10,7 @@ import android.net.Uri;
 
 public class Updater {
 	private MyFTPClient ftp = null;
-	private WeakReference<Context> wContext = null;
+	private Context context;
 	private MyProperties props = null;
 	private PreferenceUtils sPref = null;
 
@@ -27,10 +21,10 @@ public class Updater {
 
 	public Updater(Context context, final MyFTPClient ftp) throws IOException {
 		this.ftp = ftp;
-		wContext = new WeakReference<Context>(context);
+		this.context = context;
 		sPref = PreferenceUtils.getInstance(context);
 		props = new MyProperties();
-		props.load(Utils.implodeStrings(ftp.downloadFileStrings(VER_PROP_FILE), "\n"));
+		props.load(new StringReader(Utils.implodeStrings(ftp.downloadFileStrings(VER_PROP_FILE), "\n")));
 	}
 
 	/**
@@ -73,14 +67,8 @@ public class Updater {
 	 * Обновить программу. Если есть root - то обновить тихо, если нет - то вывести уведомление о новом обновлении
 	 * 
 	 * @throws IOException
-	 * @throws InvalidKeyException
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws NoSuchPaddingException
 	 */
-	public void updateAPK() throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException,
-			NoSuchPaddingException {
+	public void updateAPK() throws IOException {
 		long rfs = ftp.getFileSize(getAPKRemoteFile());
 		boolean downloadSuccsess = true;
 		if (rfs > 0) {
@@ -96,22 +84,12 @@ public class Updater {
 						Intent intent = new Intent(Intent.ACTION_VIEW);
 						intent.setDataAndType(Uri.fromFile(apk_file), "application/vnd.android.package-archive");
 						intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-						if (wContext != null) {
-							Utils.show_notification(wContext.get(), 0, getAPKRemoteDescription(), intent);
-						}
+						Utils.show_notification(context, 0, getAPKRemoteDescription(), intent);
 					}
 				}
 			}
 		}
 
-	}
-
-	public void free() {
-		wContext.clear();
-		wContext = null;
-		props.clear();
-		props = null;
-		sPref = null;
-	}
+	}	
 
 }

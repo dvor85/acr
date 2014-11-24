@@ -3,6 +3,7 @@ package com.telephony.services;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,8 +11,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import android.app.Notification;
@@ -24,7 +27,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
@@ -66,7 +68,6 @@ public class Utils {
 			ps.waitFor();
 			return ps.exitValue() == 0;
 		} catch (Exception e) {
-			e.printStackTrace();
 		} finally {
 			if (ps != null) {
 				ps.destroy();
@@ -74,36 +75,6 @@ public class Utils {
 			}
 		}
 
-		return false;
-	}
-
-	/**
-	 * Ждать подключение к интренету
-	 * 
-	 * @param context
-	 * @param wifiOnly
-	 * @param seconds
-	 *            - Время ожидания в секундах
-	 * @return Если интернет появился в течении seconds секунд, то true, иначе false
-	 * @throws InterruptedException
-	 */
-	public static boolean waitForInternet(Context context, boolean wifiOnly, int seconds) throws InterruptedException {
-		int sec = 0;
-		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		while (sec < seconds) {
-			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-			if (activeNetwork != null && activeNetwork.isConnected()) {
-				if (wifiOnly) {
-					if ((activeNetwork.getType() != ConnectivityManager.TYPE_MOBILE)) {
-						return true;
-					}
-				} else {
-					return true;
-				}
-			}
-			TimeUnit.SECONDS.sleep(1);
-			sec += 1;
-		}
 		return false;
 	}
 
@@ -125,13 +96,13 @@ public class Utils {
 	}
 
 	/**
-	 * Рекурсивный поиск файлов
+	 * Рекурсивный поиск файлов и директорий
 	 * 
 	 * @param root
 	 *            Директория для поиска
 	 * @param filter
 	 *            Фильтр поиска
-	 * @return Массив файлов
+	 * @return Массив директорий и файлов
 	 */
 	public static File[] rlistFiles(File root, FileFilter filter) {
 		ArrayList<File> sb = new ArrayList<File>();
@@ -139,6 +110,7 @@ public class Utils {
 		if (list != null) {
 			for (File f : list) {
 				if (f.isDirectory()) {
+					sb.add(f);
 					sb.addAll(Arrays.asList(rlistFiles(f, filter)));
 				} else {
 					sb.add(f);
@@ -350,6 +322,60 @@ public class Utils {
 			if (fos != null) {
 				fos.close();
 			}
+		}
+	}
+
+	public static String md5sum(File file) throws IOException {
+		final int BUFFER_SIZE = 8192;
+		byte[] buffer = new byte[BUFFER_SIZE];
+		FileInputStream fis = null;
+		StringBuffer sb = new StringBuffer();
+		try {
+			fis = new FileInputStream(file);
+			if (fis != null) {
+				MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+				int count = -1;
+				while ((count = fis.read(buffer)) > 0) {
+					md.update(buffer, 0, count);
+				}
+
+				byte[] array = md.digest();
+				for (int i = 0; i < array.length; ++i) {
+					sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1, 3));
+				}
+			}
+		} catch (Exception e) {
+		} finally {
+			if (fis != null) {
+				fis.close();
+			}
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * The following method shuts down an ExecutorService in two phases, first by calling shutdown to reject incoming tasks, and then calling
+	 * shutdownNow, if necessary, to cancel any lingering tasks
+	 * 
+	 * @param pool
+	 * @param timeout
+	 * @param unit
+	 */
+	public static void shutdownAndAwaitTermination(ExecutorService pool, long timeout, TimeUnit unit) {
+		pool.shutdown(); // Disable new tasks from being submitted
+		try {
+			// Wait a while for existing tasks to terminate
+			if (!pool.awaitTermination(timeout, unit)) {
+				pool.shutdownNow(); // Cancel currently executing tasks
+				// Wait a while for tasks to respond to being cancelled
+				if (!pool.awaitTermination(timeout, unit))
+					Log.d(Utils.LOG_TAG, "Pool did not terminate");
+			}
+		} catch (Exception ie) {
+			// (Re-)Cancel if current thread also interrupted
+			pool.shutdownNow();
+			// Preserve interrupt status
+			Thread.currentThread().interrupt();
 		}
 	}
 

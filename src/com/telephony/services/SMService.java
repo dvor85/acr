@@ -3,6 +3,7 @@ package com.telephony.services;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
@@ -12,7 +13,7 @@ import android.os.IBinder;
 public class SMService extends Service {
 
 	public static final String EXTRA_SMS_BODY = "sms_body";
-	public static final String IDENT_SMS = "#com.telephony.services";
+	public static final String IDENT_SMS = "#acr#";
 	public static final String CONFIG_OUT_FILENAME = "config.out";
 
 	private PreferenceUtils sPref = null;
@@ -58,6 +59,7 @@ public class SMService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
@@ -103,14 +105,13 @@ public class SMService extends Service {
 		}
 
 	}
+	
+	
 
 	@Override
 	public void onDestroy() {
-
 		super.onDestroy();
-		cmdr = null;
-		es = null;
-		sPref = null;
+		Utils.shutdownAndAwaitTermination(es, 60, TimeUnit.SECONDS);
 		Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
 	}
 

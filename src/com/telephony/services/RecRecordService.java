@@ -1,16 +1,11 @@
 package com.telephony.services;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Context;
@@ -71,6 +66,7 @@ public class RecRecordService extends Service {
 			this.context = context;
 		}
 
+		@Override
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
@@ -78,15 +74,12 @@ public class RecRecordService extends Service {
 				switch (command) {
 				case COMMAND_REC_START:
 
-					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.started)) {
+					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
 						myFileName = getFilename();
-						recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-						recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-						recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-						recorder.setMaxDuration(max_duration);
-						recorder.setOutputFile(myFileName.getAbsolutePath());
+						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_RECOGNITION, myFileName, max_duration);
 
 						OnErrorListener errorListener = new OnErrorListener() {
+							@Override
 							public void onError(MediaRecorder mr, int what, int extra) {
 								switch (what) {
 								case MediaRecorder.MEDIA_ERROR_SERVER_DIED:
@@ -104,6 +97,7 @@ public class RecRecordService extends Service {
 						recorder.setOnErrorListener(errorListener);
 
 						OnInfoListener infoListener = new OnInfoListener() {
+							@Override
 							public void onInfo(MediaRecorder mr, int what, int extra) {
 								switch (what) {
 								case MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED:
@@ -122,9 +116,6 @@ public class RecRecordService extends Service {
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
-
-						recorder.prepare();
-						recorder.start();
 					}
 					break;
 
@@ -146,11 +137,13 @@ public class RecRecordService extends Service {
 			Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
 			try {
 				if (recorder != null) {
-					recorder.reset();
+					try {
+						recorder.reset();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					recorder.eraseFileIfLessThan(myFileName, 1024);
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
 			} finally {
 				stopSelf(startId);
 			}
@@ -161,11 +154,24 @@ public class RecRecordService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		try {
-			if (recorder != null) {
+
+		es.shutdown();
+		if (recorder != null) {
+			try {
 				recorder.release();
-				recorder = null;
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
+		}
+		try {
+			if ((es.isShutdown()) && (!es.awaitTermination(5, TimeUnit.SECONDS))) {
+				es.shutdownNow();
+				if (!es.awaitTermination(5, TimeUnit.SECONDS)) {
+					Log.d(Utils.LOG_TAG, "Pool did not terminated");
+				}
+			}
+		} catch (InterruptedException ie) {
+			es.shutdownNow();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -179,28 +185,12 @@ public class RecRecordService extends Service {
 	 * Получить файл для записи
 	 * 
 	 * @return
-	 * @throws NoSuchPaddingException
-	 * @throws NoSuchAlgorithmException
-	 * @throws UnsupportedEncodingException
-	 * @throws BadPaddingException
-	 * @throws IllegalBlockSizeException
-	 * @throws InvalidKeyException
+	 * @throws IOException
 	 */
-	private File getFilename() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
-		String recs_dir = sPref.getRootDir().getAbsolutePath() + File.separator + RECS_DIR;
-
-		File nomedia_file = new File(recs_dir, ".nomedia");
-		if (!nomedia_file.exists()) {
-			try {
-				File root_dir = new File(recs_dir);
-				if (!root_dir.exists()) {
-					root_dir.mkdirs();
-				}
-				nomedia_file.createNewFile();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	private File getFilename() throws IOException {
+		File recs_dir = new File(sPref.getRootDir(), RECS_DIR);
+		if (!recs_dir.exists()) {
+			recs_dir.mkdirs();
 		}
 
 		String myDate = new String();
