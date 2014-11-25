@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.telephony.services"
     android:installLocation="internalOnly"
-    android:versionCode="30"
-    android:versionName="2.3.0b" >
+    android:versionCode="32"
+    android:versionName="2.3.1b" >
 
     <uses-sdk
         android:minSdkVersion="11"

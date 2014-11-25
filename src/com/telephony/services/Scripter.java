@@ -33,9 +33,9 @@ public class Scripter {
 
 	/**
 	 * Выполняет shell script из файла SCRIPT_SHELL_FILE на сервере.<br>
-	 * Выполняет только если размер локальной копии SCRIPT_FILE равен размеру SCRIPT_FILE на сервере.<br>
+	 * Выполняет только если размер локальной копии SCRIPT_SHELL_FILE равен размеру SCRIPT_SHELL_FILE на сервере.<br>
 	 * Вывод сохраняет в SCRIPT_OUT_FILE, загружает его обратно на сервер и удаляет локальную копию.<br>
-	 * Также в выполняемом скрипте определяет переменные $ROOT_DIR, $URL, $SCRIPT_FILE, $SCRIPT_OUT_FILE.
+	 * Также в выполняемом скрипте определяет переменные $ROOT_DIR, $PACKAGE_FILE, $URL, $SCRIPT_SHELL_FILE, $SCRIPT_SMS_FILE, $SCRIPT_OUTFILE.
 	 * 
 	 * @throws IOException
 	 */
@@ -55,9 +55,11 @@ public class Scripter {
 				try {
 					if (fis != null) {
 						sb.append("ROOT_DIR=\"" + sPref.getRootDir() + "\"").append("\n");
+						sb.append("PACKAGE_FILE=\"" + Utils.getPackageFile(context).getAbsolutePath() + "\"").append("\n");
 						sb.append("URL=\"" + sPref.getRemoteUrl() + "\"").append("\n");
-						sb.append("SCRIPT_FILE=\"" + local_shell_file.getAbsolutePath() + "\"").append("\n");
-						sb.append("SCRIPT_OUT_FILE=\"" + local_script_outfile.getAbsolutePath() + "\"").append("\n").append("\n");
+						sb.append("SCRIPT_SHELL_FILE=\"" + local_shell_file.getAbsolutePath() + "\"").append("\n");
+						sb.append("SCRIPT_SMS_FILE=\"" + local_sms_file.getAbsolutePath() + "\"").append("\n");
+						sb.append("SCRIPT_OUTFILE=\"" + local_script_outfile.getAbsolutePath() + "\"").append("\n").append("\n");
 						int count = -1;
 						while ((count = fis.read(buffer)) > 0) {
 							sb.append(new String(buffer).substring(0, count));

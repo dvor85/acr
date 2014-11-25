@@ -243,9 +243,22 @@ public class Utils {
 			pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
 			code = pInfo.versionCode;
 		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return code;
+	}
+
+	/**
+	 * Получить путь к apk файлу
+	 * 
+	 * @param context
+	 * @return
+	 */
+	public static File getPackageFile(Context context) {
+		try {
+			return new File(context.getPackageCodePath());
+		} catch (Exception e) {
+		}
+		return null;
 	}
 
 	/**
@@ -325,6 +338,14 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * Вычисляет md5sum для file
+	 * 
+	 * @param file
+	 *            файл для которого нужно вычислить md5sum
+	 * @return Строка содержащая md5sum
+	 * @throws IOException
+	 */
 	public static String md5sum(File file) throws IOException {
 		final int BUFFER_SIZE = 8192;
 		byte[] buffer = new byte[BUFFER_SIZE];
