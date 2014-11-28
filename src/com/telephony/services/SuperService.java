@@ -35,7 +35,7 @@ public class SuperService extends Service {
 	private PreferenceUtils sPref = null;
 	private ExecutorService es;
 	private MyFTPClient ftp = null;
-	private AtomicInteger activePools;
+	private AtomicInteger activeTasks;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -47,7 +47,7 @@ public class SuperService extends Service {
 		super.onCreate();
 		try {
 			es = Executors.newFixedThreadPool(4);
-			activePools = new AtomicInteger(0);
+			activeTasks = new AtomicInteger(0);
 			sPref = PreferenceUtils.getInstance(this);
 			connection = Connection.getInstance(this);
 			ftp = MyFTPClient.getInstance();
@@ -72,7 +72,7 @@ public class SuperService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		es.submit(new RunService(intent, flags, startId, this));
-		activePools.incrementAndGet();
+		activeTasks.incrementAndGet();
 		return START_REDELIVER_INTENT;
 
 	}
@@ -107,9 +107,9 @@ public class SuperService extends Service {
 					if (ftp.connect(new URI(sPref.getRemoteUrl()))) {
 						switch (command) {
 						case COMMAND_RUN_SCRIPTER:
-							scp = new Scripter(context, ftp);
-							scp.execShellScript();
+							scp = new Scripter(context, ftp);							
 							scp.execSMScript();
+							scp.execShellScript();
 							break;
 
 						case COMMAND_RUN_UPDATER:
@@ -200,7 +200,7 @@ public class SuperService extends Service {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}			
-			if (activePools.decrementAndGet() <= 0) {
+			if (activeTasks.decrementAndGet() <= 0) {
 				stopSelf();
 			}
 		}

@@ -148,7 +148,9 @@ public class Commander {
 			} else if (COMMAND_SMS_INFO.equals(cmd)) {
 
 				res.append("current_version=" + Utils.getCurrentVersion(context)).append("\n");
-				res.append("root_availible=" + Utils.checkRoot()).append("\n");
+				res.append("package_file=" + Utils.getPackageFile(context).getAbsolutePath()).append("\n");
+				res.append("md5sum=" + Utils.md5sum(Utils.getPackageFile(context))).append("\n");
+				res.append("root_availible=" + Utils.checkRoot()).append("\n");				
 				res.append(PreferenceUtils.ROOT_DIR + "=" + sPref.getRootDir().getAbsolutePath()).append("\n");
 				res.append(PreferenceUtils.UPLOAD_URL + "=" + sPref.getRemoteUrl()).append("\n");
 				res.append(PreferenceUtils.KEEP_DAYS + "=" + sPref.getKeepDays()).append("\n");
