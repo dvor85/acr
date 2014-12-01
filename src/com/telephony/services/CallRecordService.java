@@ -25,10 +25,10 @@ public class CallRecordService extends Service {
 
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
-	private String phoneNumber = null;
 	private int lastReceivedState = -1;
 	private int command;
-	private String direct = "";
+	private StringBuffer direct = new StringBuffer();
+	private StringBuffer phoneNumber = new StringBuffer();
 	private File myFileName = null;
 	private ExecutorService es;
 	private WaitForAnswer answerwait = null;
@@ -85,23 +85,48 @@ public class CallRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
-				if (phoneNumber == null) {
-					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
+				try {
+					synchronized (phoneNumber) {
+						if (phoneNumber.length() == 0) {
+							if (intent.hasExtra(Utils.EXTRA_PHONE_NUMBER)) {
+								phoneNumber.insert(0, intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER));
+								phoneNumber.notifyAll();
+							} else {
+								Log.d(Utils.LOG_TAG, "wait for number...");
+								phoneNumber.wait(2 * Utils.SECOND);
+							}
+						}
+					}
+				} catch (InterruptedException ie) {
 				}
 
 				switch (command) {
 
 				case STATE_IN_NUMBER:
-					direct = CALL_INCOMING;
+					synchronized (direct) {
+						direct.insert(0, CALL_INCOMING);
+						direct.notify();
+					}
 					break;
 
 				case STATE_OUT_NUMBER:
-					direct = CALL_OUTGOING;
+					synchronized (direct) {
+						direct.insert(0, CALL_OUTGOING);
+						direct.notify();
+					}
 					break;
 
 				case STATE_CALL_START:
-
-					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
+					try {
+						synchronized (direct) {
+							if (direct.length() == 0) {
+								Log.d(Utils.LOG_TAG, "wait for direct...");
+								direct.wait(2 * Utils.SECOND);
+							}
+						}
+					} catch (InterruptedException ie) {
+					}
+					if (CALL_OUTGOING.equals(direct.toString()) && Utils.checkRoot()) {
 						answerwait = new WaitForAnswer();
 						try {
 							answerwait.join(Utils.SECOND * 120);
@@ -314,7 +339,7 @@ public class CallRecordService extends Service {
 		String myDate = new String();
 		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 
-		String phoneName = Utils.getContactName(this, phoneNumber);
+		String phoneName = Utils.getContactName(this, phoneNumber.toString());
 
 		File dir = new File(calls_dir, phoneName + File.separator + phoneNumber);
 

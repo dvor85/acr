@@ -102,7 +102,7 @@ public class SuperService extends Service {
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
-						&& connection.waitForConnection(sPref.isWifiOnly(), Utils.SECOND * 20)) {
+						&& connection.waitForConnection(sPref.isWifiOnly(), 20, TimeUnit.SECONDS)) {
 
 					if (ftp.connect(new URI(sPref.getRemoteUrl()))) {
 						switch (command) {
