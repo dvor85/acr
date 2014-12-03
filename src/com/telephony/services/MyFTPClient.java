@@ -5,18 +5,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.commons.net.util.TrustManagerUtils;
-
-import android.util.Log;
 
 public class MyFTPClient extends FTPSClient {
 

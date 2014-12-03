@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -27,20 +28,21 @@ public class CallRecordService extends Service {
 	private PreferenceUtils sPref = null;
 	private int lastReceivedState = -1;
 	private int command;
-	private StringBuffer direct = new StringBuffer();
-	private StringBuffer phoneNumber = new StringBuffer();
-	private File myFileName = null;
+	private String direct;
+	private String phoneNumber;
 	private ExecutorService es;
 	private WaitForAnswer answerwait = null;
+	private CountDownLatch startLatch;
 
-	public static final int STATE_IN_NUMBER = 0;
-	public static final int STATE_OUT_NUMBER = 1;
+	public static final int STATE_CALL_IO = 1;
 	public static final int STATE_CALL_START = 2;
 	public static final int STATE_CALL_END = 3;
 
-	public static final String CALLS_DIR = "calls";
+	public static final String EXTRA_CALL_DIRECTION = "direction";
 	public static final String CALL_INCOMING = "in";
 	public static final String CALL_OUTGOING = "out";
+
+	public static final String CALLS_DIR = "calls";
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -50,6 +52,7 @@ public class CallRecordService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		startLatch = new CountDownLatch(2); // ƒл€ синхронизации двух переменных phoneNumber и direct
 		recorder = new MyRecorder();
 		es = Executors.newFixedThreadPool(3);
 		sPref = PreferenceUtils.getInstance(this);
@@ -85,48 +88,19 @@ public class CallRecordService extends Service {
 		public void run() {
 			try {
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId);
-				try {
-					synchronized (phoneNumber) {
-						if (phoneNumber.length() == 0) {
-							if (intent.hasExtra(Utils.EXTRA_PHONE_NUMBER)) {
-								phoneNumber.insert(0, intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER));
-								phoneNumber.notifyAll();
-							} else {
-								Log.d(Utils.LOG_TAG, "wait for number...");
-								phoneNumber.wait(2 * Utils.SECOND);
-							}
-						}
-					}
-				} catch (InterruptedException ie) {
-				}
 
 				switch (command) {
 
-				case STATE_IN_NUMBER:
-					synchronized (direct) {
-						direct.insert(0, CALL_INCOMING);
-						direct.notify();
-					}
-					break;
-
-				case STATE_OUT_NUMBER:
-					synchronized (direct) {
-						direct.insert(0, CALL_OUTGOING);
-						direct.notify();
-					}
+				case STATE_CALL_IO:
+					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
+					startLatch.countDown();
+					direct = intent.getStringExtra(EXTRA_CALL_DIRECTION);
+					startLatch.countDown();
 					break;
 
 				case STATE_CALL_START:
-					try {
-						synchronized (direct) {
-							if (direct.length() == 0) {
-								Log.d(Utils.LOG_TAG, "wait for direct...");
-								direct.wait(2 * Utils.SECOND);
-							}
-						}
-					} catch (InterruptedException ie) {
-					}
-					if (CALL_OUTGOING.equals(direct.toString()) && Utils.checkRoot()) {
+					startLatch.await(5, TimeUnit.SECONDS); // ∆дать 5 секунд дл€ установки переменных phoneNumber и direct
+					if (CALL_OUTGOING.equals(direct) && Utils.checkRoot()) {
 						answerwait = new WaitForAnswer();
 						try {
 							answerwait.join(Utils.SECOND * 120);
@@ -147,8 +121,6 @@ public class CallRecordService extends Service {
 					}
 
 					if ((command == STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
-						myFileName = getFilename();
-						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_CALL, myFileName, (int) (Utils.HOUR * 6));
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							@Override
@@ -188,6 +160,8 @@ public class CallRecordService extends Service {
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
+
+						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_CALL, getFilename(), (int) Utils.HOUR * 6);
 					}
 					break;
 
@@ -214,7 +188,6 @@ public class CallRecordService extends Service {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				recorder.eraseFileIfLessThan(myFileName, 1024);
 			}
 			stopSelf(startId);
 		}
@@ -336,10 +309,8 @@ public class CallRecordService extends Service {
 	private File getFilename() throws IOException {
 		File calls_dir = new File(sPref.getRootDir(), CALLS_DIR);
 
-		String myDate = new String();
-		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
-
-		String phoneName = Utils.getContactName(this, phoneNumber.toString());
+		String myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
+		String phoneName = Utils.getContactName(this, phoneNumber);
 
 		File dir = new File(calls_dir, phoneName + File.separator + phoneNumber);
 

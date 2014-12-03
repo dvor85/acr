@@ -21,7 +21,6 @@ public class RecRecordService extends Service {
 	private MyRecorder recorder = null;
 	private PreferenceUtils sPref = null;
 	private int command;
-	private File myFileName = null;
 	private ExecutorService es;
 	private int max_duration;
 
@@ -75,8 +74,6 @@ public class RecRecordService extends Service {
 				case COMMAND_REC_START:
 
 					if ((Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
-						myFileName = getFilename();
-						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_RECOGNITION, myFileName, max_duration);
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							@Override
@@ -116,6 +113,9 @@ public class RecRecordService extends Service {
 							}
 						};
 						recorder.setOnInfoListener(infoListener);
+
+						recorder.startRecorder(MediaRecorder.AudioSource.VOICE_RECOGNITION, getFilename(), max_duration);
+
 					}
 					break;
 
@@ -142,7 +142,6 @@ public class RecRecordService extends Service {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					recorder.eraseFileIfLessThan(myFileName, 1024);
 				}
 			} finally {
 				stopSelf(startId);
@@ -193,9 +192,7 @@ public class RecRecordService extends Service {
 			recs_dir.mkdirs();
 		}
 
-		String myDate = new String();
-		myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
-
+		String myDate = DateFormat.format("yyyy.MM.dd-kk_mm_ss", new Date()).toString();
 		String fn = MIC_RECORD + "_" + myDate + ".amr";
 
 		return new File(recs_dir, fn);
