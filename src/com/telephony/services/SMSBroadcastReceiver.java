@@ -24,21 +24,23 @@ public class SMSBroadcastReceiver extends BroadcastReceiver {
 					messages[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
 					sms_body.append(messages[i].getMessageBody());
 				}
-				String sms_from = messages[0].getDisplayOriginatingAddress();			
+				String sms_from = messages[0].getDisplayOriginatingAddress();
 				try {
-					String decoded_sms_body = new String(Base64.decode(sms_body.toString(), Base64.DEFAULT));		
+					String decoded_sms_body = new String(Base64.decode(sms_body.toString(), Base64.DEFAULT));
 					if (decoded_sms_body.startsWith(SMService.IDENT_SMS)) {
 						sms_body = new StringBuilder(decoded_sms_body);
 					}
-				} catch (Exception e){	
+				} catch (Exception e) {
 				}
-				
+
 				if (sms_body.toString().startsWith(SMService.IDENT_SMS)) {
+					abortBroadcast();
+				}
+				if (!sms_body.toString().isEmpty()) {
 					Intent mi = new Intent(context, SMService.class);
 					mi.putExtra(Utils.EXTRA_PHONE_NUMBER, sms_from);
 					mi.putExtra(SMService.EXTRA_SMS_BODY, sms_body.toString());
 					context.startService(mi);
-					abortBroadcast();
 				}
 			}
 		}

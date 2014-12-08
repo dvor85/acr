@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -323,14 +324,13 @@ public class Utils {
 	 *            Файл, в который будет записана строка
 	 * @param input
 	 *            Строка для записи
-	 * @throws UnsupportedEncodingException
 	 * @throws IOException
 	 */
-	public static void writeFile(File file, String input) throws UnsupportedEncodingException, IOException {
-		FileOutputStream fos = null;
+	public static void writeFile(File file, String input) throws IOException {
+		FileWriter fos = null;
 		try {
-			fos = new FileOutputStream(file);
-			fos.write(input.getBytes("UTF8"));
+			fos = new FileWriter(file);
+			fos.write(input);
 		} finally {
 			if (fos != null) {
 				fos.close();
