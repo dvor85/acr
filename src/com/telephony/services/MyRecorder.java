@@ -4,13 +4,23 @@ import java.io.File;
 import java.io.IOException;
 
 import android.media.MediaRecorder;
+import android.os.SystemClock;
 
 public class MyRecorder extends MediaRecorder {
 	private boolean started = false;
+	private File outputFile = null;
+	private long min_filesize_bytes = 0;
+	private int min_duration_ms = 0;
+	private long current_time_ms = 0;
 
 	private static int[] AUDIO_SOURCES = { MediaRecorder.AudioSource.VOICE_CALL, MediaRecorder.AudioSource.VOICE_UPLINK,
 			MediaRecorder.AudioSource.VOICE_DOWNLINK, MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.DEFAULT,
 			MediaRecorder.AudioSource.MIC };
+
+	public MyRecorder() {		
+		setMinDuration(1000);
+		setMinFileSize(1024);
+	}
 
 	/**
 	 * Запущена ли запись.
@@ -34,46 +44,65 @@ public class MyRecorder extends MediaRecorder {
 	 *             Если ни один источник записи не сработал.
 	 */
 	public synchronized void startRecorder(int source, File file, int max_duration) throws IOException {
-		if (started) {
-			return;
-		}
-		int i = 0, k = AUDIO_SOURCES.length;
+		if (!started) {
+			int i = 0, k = AUDIO_SOURCES.length;
 
-		for (int s : AUDIO_SOURCES) {
-			if (s == source) {
-				k = i;
-			}
-			if (i >= k) {
-				try {
-					reset();
-					setAudioSource(s);
-					setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-					setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-					setMaxDuration(max_duration);
-					setOutputFile(file.getAbsolutePath());
-
-					prepare();
-					start();
-					Log.d(Utils.LOG_TAG, "source = " + s + " index = " + i);
-					return;
-				} catch (Exception e) {
+			for (int s : AUDIO_SOURCES) {
+				if (s == source) {
+					k = i;
 				}
+				if (i >= k) {
+					try {
+						reset();
+						setAudioSource(s);
+						setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+						setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+						setOutputFile(file.getAbsolutePath());
+						setMaxDuration(max_duration);
+
+						prepare();
+						start();
+						Log.d(Utils.LOG_TAG, "source = " + s + " index = " + i);
+						return;
+					} catch (Exception e) {
+					}
+				}
+				i++;
 			}
-			i++;
+			throw new IOException("Error while start media recorder!");
 		}
-		throw new IOException("Error while start media recorder!");
+	}
+
+	public synchronized void setMinDuration(int min_duration_ms) {
+		this.min_duration_ms = min_duration_ms;
+	}
+
+	public synchronized void setMinFileSize(long min_filesize_bytes) {
+		this.min_filesize_bytes = min_filesize_bytes;
+	}
+
+	public synchronized File getOutputFile() {
+		return outputFile;
+	}
+
+	@Override
+	public synchronized void setOutputFile(String path) throws IllegalStateException {
+		super.setOutputFile(path);
+		outputFile = new File(path);
 	}
 
 	@Override
 	public synchronized void start() throws IllegalStateException {
 		super.start();
 		started = true;
+		current_time_ms = SystemClock.elapsedRealtime();
 	}
 
 	@Override
 	public synchronized void stop() throws IllegalStateException {
 		if (started) {
 			super.stop();
+			eraseFileIfLessThan();
 			started = false;
 		}
 	}
@@ -84,6 +113,7 @@ public class MyRecorder extends MediaRecorder {
 			stop();
 		}
 		super.reset();
+		outputFile = null;
 	}
 
 	@Override
@@ -94,12 +124,10 @@ public class MyRecorder extends MediaRecorder {
 		super.release();
 	}
 
-	public synchronized void eraseFileIfLessThan(File file, long size) {
-		try {
-			if ((file != null) && (file.length() < size)) {
-				file.delete();
-			}
-		} catch (Exception e) {
+	private void eraseFileIfLessThan() {
+		if ((outputFile != null)
+				&& ((outputFile.length() < min_filesize_bytes) || ((SystemClock.elapsedRealtime() - current_time_ms) < min_duration_ms))) {
+			outputFile.delete();
 		}
 	}
 

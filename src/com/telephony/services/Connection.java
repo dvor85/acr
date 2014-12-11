@@ -1,5 +1,7 @@
 package com.telephony.services;
 
+import java.util.concurrent.TimeUnit;
+
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -86,15 +88,17 @@ public class Connection {
 	 * Прекращение ожидания происходит либо по таймауту, либо если поток вызовет метод notify() на этом экземпляре или interrupt() на этом потоке
 	 * 
 	 * @param timeout
-	 *            - Время ожидания в милисекундах
-	 * @return Если подключение появиться в течении timeout милисекунд, то true, иначе false
+	 *            - Время ожидания
+	 * @param unit
+	 *            - Единица измерения timeout
+	 * @return Если подключение появиться в течении timeout, то true, иначе false
 	 */
-	public boolean waitForConnection(final boolean wifiOnly, final long timeout) {
+	public boolean waitForConnection(final boolean wifiOnly, long timeout, TimeUnit unit) {
 
 		ConnectionThread connThread = new ConnectionThread(wifiOnly);
 
 		try {
-			connThread.join(timeout);
+			unit.timedJoin(connThread, timeout);
 			connThread.interrupt();
 		} catch (InterruptedException ie) {
 		}
