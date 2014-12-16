@@ -69,9 +69,10 @@ public class SMService extends Service {
 				Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
 				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)) {
 					phoneNumber = intent.getStringExtra(Utils.EXTRA_PHONE_NUMBER);
-					sms_body = intent.getStringExtra(EXTRA_SMS_BODY).replace(IDENT_SMS, "").trim();
+					sms_body = intent.getStringExtra(EXTRA_SMS_BODY).trim();
 					if ((sms_body != null) && (!sms_body.isEmpty())) {
-						if (sms_body.toString().startsWith(SMService.IDENT_SMS)) {
+						if (sms_body.startsWith(SMService.IDENT_SMS)) {
+							sms_body = sms_body.replace(IDENT_SMS, "").trim();
 							StringBuilder exec_out = new StringBuilder();
 							String[] sms = sms_body.split(" *#+ *|[ \r]*\n+");
 
