@@ -101,13 +101,14 @@ public class SuperService extends Service {
 				command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
 				interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
 				Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
-				if (sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
+				String url = sPref.getRemoteUrl();
+				if ((url != null) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
 						&& connection.waitForConnection(sPref.isWifiOnly(), 20, TimeUnit.SECONDS)) {
 
-					if (ftp.connect(new URI(sPref.getRemoteUrl()))) {
+					if (ftp.connect(new URI(url))) {
 						switch (command) {
 						case COMMAND_RUN_SCRIPTER:
-							scp = new Scripter(context, ftp);							
+							scp = new Scripter(context, ftp);
 							scp.execSMScript();
 							scp.execShellScript();
 							break;
@@ -199,7 +200,7 @@ public class SuperService extends Service {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			}			
+			}
 			if (activeTasks.decrementAndGet() <= 0) {
 				stopSelf();
 			}
