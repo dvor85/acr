@@ -120,7 +120,8 @@ public class CallRecordService extends Service {
 						}
 					}
 
-					if ((command == STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())) {
+					if ((command == STATE_CALL_START) && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED) && (!recorder.isStarted())
+							&& (sPref.isCallsRecord())) {
 
 						OnErrorListener errorListener = new OnErrorListener() {
 							@Override

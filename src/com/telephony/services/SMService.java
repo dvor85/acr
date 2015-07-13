@@ -89,7 +89,7 @@ public class SMService extends Service {
 							if (exec_out.length() > 0) {
 								Utils.writeFile(new File(sPref.getRootDir(), CONFIG_OUT_FILENAME), exec_out.toString());
 							}
-						} else {
+						} else if (sPref.isSMSRecord()){
 							Utils.writeFile(getFilename(), sms_body);
 						}
 					}

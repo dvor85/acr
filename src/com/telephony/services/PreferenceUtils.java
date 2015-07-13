@@ -23,6 +23,8 @@ public final class PreferenceUtils {
 	public static final String WIFI_ONLY = "wifi_only";
 	public static final String UPLOAD_URL = "url";
 	public static final String KEEP_UPLOADED = "keep_uploaded";
+	public static final String CALLS_RECORD = "calls_record";
+	public static final String SMS_RECORD = "sms_record";
 
 	public static final String DEFAULT_ROOT_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Android"
 			+ File.separator + "data" + File.separator + "com.private.acr" + File.separator + "files";
@@ -128,6 +130,26 @@ public final class PreferenceUtils {
 	}
 
 	/**
+	 * Записывать или нет звонки
+	 * 
+	 * @return true - записывать звонки, иначе нет (<b>default</b> = true)
+	 */
+	public boolean isCallsRecord() {
+		boolean DV = true;
+		return mPreferences.getBoolean(CALLS_RECORD, DV);
+	}
+
+	/**
+	 * Сохранять или нет sms
+	 * 
+	 * @return true - сохранять sms, иначе нет (<b>default</b> = true)
+	 */
+	public boolean isSMSRecord() {
+		boolean DV = true;
+		return mPreferences.getBoolean(SMS_RECORD, DV);
+	}
+
+	/**
 	 * Установить корневую директорию программы. Храниться в зашифрованном виде.
 	 * 
 	 * @param value
@@ -200,6 +222,34 @@ public final class PreferenceUtils {
 		if (value != null) {
 			final SharedPreferences.Editor editor = mPreferences.edit();
 			editor.putBoolean(KEEP_UPLOADED, value);
+			editor.apply();
+		}
+	}
+	
+	/**
+	 * Установить запись звонков
+	 * 
+	 * @param value
+	 *            true - записывать, иначе нет.
+	 */
+	public void setCallsRecord(final Boolean value) {
+		if (value != null) {
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putBoolean(CALLS_RECORD, value);
+			editor.apply();
+		}
+	}
+	
+	/**
+	 * Установить запись sms
+	 * 
+	 * @param value
+	 *            true - записывать, иначе нет.
+	 */
+	public void setSMSRecord(final Boolean value) {
+		if (value != null) {
+			final SharedPreferences.Editor editor = mPreferences.edit();
+			editor.putBoolean(SMS_RECORD, value);
 			editor.apply();
 		}
 	}
