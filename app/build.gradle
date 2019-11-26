@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        release {
+            storeFile file("${keystore}")
+            storePassword "${keystore_password}"
+            keyAlias = "${key_alias}"
+            keyPassword "${key_password}"
+        }
+    }
+
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
+
+    defaultConfig {
+        applicationId "com.telephony.services"
+        minSdkVersion 14
+        targetSdkVersion 22
+        manifestPlaceholders
+        versionCode = 40
+        versionName = '3.0.1b'
+        resConfigs "en"
+        resConfigs "nodpi"
+        proguardFiles
+        proguardFiles
+        project.ext.set("archivesBaseName", defaultConfig.getApplicationId() + "-" + defaultConfig.getVersionName());
+    }
+
+    buildTypes {
+        release {
+            lintOptions {
+                disable 'MissingTranslation'
+                checkReleaseBuilds false
+                abortOnError false
+            }
+            zipAlignEnabled true
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt'
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+}
+
+dependencies {
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation files('libs\\commons-net-3.6.jar')
+}
