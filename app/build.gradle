@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId "com.telephony.services"
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 22
         manifestPlaceholders
         versionCode = 40
@@ -34,6 +34,7 @@ android {
                 checkReleaseBuilds false
                 abortOnError false
             }
+
             zipAlignEnabled true
             minifyEnabled true
             shrinkResources true
@@ -50,4 +51,5 @@ android {
 dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation files('libs\\commons-net-3.6.jar')
+    implementation project(path: ':sardine-android')
 }

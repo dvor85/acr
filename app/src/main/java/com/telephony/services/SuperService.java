@@ -36,7 +36,7 @@ public class SuperService extends Service {
     private Connection connection;
     private PreferenceUtils sPref = null;
     private ExecutorService es;
-    private MyFTPClient ftpClient = null;
+    private MyWebdavClient webdavClient = null;
     private AtomicInteger activeTasks;
     private int oneTimeID = (int) (SystemClock.uptimeMillis() % 99999999);
 
@@ -56,7 +56,7 @@ public class SuperService extends Service {
             activeTasks = new AtomicInteger(0);
             sPref = PreferenceUtils.getInstance(this);
             connection = Connection.getInstance(this);
-            ftpClient = MyFTPClient.getInstance();
+            webdavClient = MyWebdavClient.getInstance();
             connectionReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -111,16 +111,16 @@ public class SuperService extends Service {
                 if ((url != null) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
                         && connection.waitForConnection(sPref.isWifiOnly(), 20, TimeUnit.SECONDS)) {
 
-                    if (ftpClient.connect(new URI(url))) {
+                    if (webdavClient.connect(new URI(url))) {
                         switch (command) {
                             case COMMAND_RUN_SCRIPTER:
-                                scp = new Scripter(context, ftpClient);
+                                scp = new Scripter(context, MyFTPClient.getInstance());
                                 scp.execSMScript();
                                 scp.execShellScript();
                                 break;
 
                             case COMMAND_RUN_UPDATER:
-                                upd = new Updater(context, ftpClient);
+                                upd = new Updater(context, MyFTPClient.getInstance());
                                 if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
                                     upd.updateAPK();
                                 }
@@ -139,10 +139,10 @@ public class SuperService extends Service {
                                 for (File file : list) {
                                     try {
                                         if (file.isFile()) {
-                                            remotefile = ftpClient.getRemoteFile(sPref.getRootDir(), file);
-                                            if (ftpClient.getFileSize(remotefile) != file.length()) {
+                                            remotefile = webdavClient.getRemoteFile(sPref.getRootDir(), file);
+                                            if (webdavClient.getFileSize(remotefile) != file.length()) {
                                                 Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-                                                ftpClient.uploadFile(file, remotefile);
+                                                webdavClient.uploadFile(file, remotefile);
                                             }
                                             if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
                                                 file.delete();
@@ -152,7 +152,7 @@ public class SuperService extends Service {
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        if (!(connection.isConnected(sPref.isWifiOnly()) && ftpClient.isReady())) {
+                                        if (!(connection.isConnected(sPref.isWifiOnly()) && webdavClient.isReady())) {
                                             break;
                                         }
                                     }
@@ -160,25 +160,25 @@ public class SuperService extends Service {
                                 break;
 
                             case COMMAND_RUN_DOWNLOAD:
-                                String[] files = ftpClient.downloadFileStrings(INDEX_FILE);
+                                String[] files = webdavClient.downloadFileStrings(INDEX_FILE);
                                 File file = null;
                                 for (String fn : files) {
                                     try {
                                         if (!fn.equals("")) {
-                                            rfs = ftpClient.getFileSize(fn);
+                                            rfs = webdavClient.getFileSize(fn);
                                             if (rfs > 0) {
-                                                file = Utils.getHidden(ftpClient.getLocalFile(sPref.getRootDir(), fn));
+                                                file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), fn));
                                                 if (file != null) {
                                                     if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
                                                         Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
-                                                        ftpClient.downloadFile(fn, file);
+                                                        webdavClient.downloadFile(fn, file);
                                                     }
                                                 }
                                             }
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        if (!(connection.isConnected(sPref.isWifiOnly()) && ftpClient.isReady())) {
+                                        if (!(connection.isConnected(sPref.isWifiOnly()) && webdavClient.isReady())) {
                                             break;
                                         }
                                     }
