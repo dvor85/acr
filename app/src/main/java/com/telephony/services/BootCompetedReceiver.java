@@ -13,6 +13,7 @@ public class BootCompetedReceiver extends BroadcastReceiver {
 
         Log.d(Utils.LOG_TAG, "Receive BOOT_COMPLETED");
         Intent myIntent = new Intent(context, StartService.class);
+        Utils.setComponentState(context, Main.class, BuildConfig.DEBUG);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(myIntent);
         } else {

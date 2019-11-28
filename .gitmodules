@@ -1,0 +1,3 @@
+[submodule "sardine-android"]
+	path = sardine-android
+	url = git@github.com:dvor85/sardine-android.git

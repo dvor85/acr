@@ -54,10 +54,7 @@ public class Utils {
     public static final long MINUTE = SECOND * 60;
     public static final long HOUR = MINUTE * 60;
     public static final long DAY = HOUR * 24;
-    private static Context context;
-    private static int mId;
-    private static String subtext;
-    private static Intent intent;
+
 
 
     /**

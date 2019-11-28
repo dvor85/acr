@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 public class Updater {
-    private MyFTPClient ftpClient = null;
+    private MyWebdavClient webdavClient = null;
     private Context context;
     private MyProperties props = null;
     private PreferenceUtils sPref = null;
@@ -18,12 +18,12 @@ public class Updater {
     public static final String APK_MD5SUM = "md5";
     public static final String APK_REMOTE_DESCRIPTION = "description";
 
-    public Updater(Context context, final MyFTPClient ftpClient) throws IOException {
-        this.ftpClient = ftpClient;
+    public Updater(Context context, final MyWebdavClient webdavClient) throws IOException {
+        this.webdavClient = webdavClient;
         this.context = context;
         sPref = PreferenceUtils.getInstance(context);
         props = new MyProperties();
-        props.load(new StringReader(Utils.implodeStrings(ftpClient.downloadFileStrings(VER_PROP_FILE), "\n")));
+        props.load(new StringReader(Utils.implodeStrings(webdavClient.downloadFileStrings(VER_PROP_FILE), "\n")));
     }
 
     /**
@@ -83,11 +83,11 @@ public class Updater {
      */
     public void updateAPK() throws IOException {
         if (!Utils.md5sum(Utils.getPackageFile(context)).equals(getRemoteMD5sum())) {
-            if (ftpClient.getFileSize(getAPKRemoteFile()) > 0) {
-                File apk_file = Utils.getHidden(ftpClient.getLocalFile(sPref.getRootDir(), getAPKRemoteFile()));
+            if (webdavClient.getFileSize(getAPKRemoteFile()) > 0) {
+                File apk_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), getAPKRemoteFile()));
                 if (apk_file != null) {
                     if (!apk_file.exists() || !Utils.md5sum(apk_file).equals(getRemoteMD5sum())) {
-                        ftpClient.downloadFile(getAPKRemoteFile(), apk_file);
+                        webdavClient.downloadFile(getAPKRemoteFile(), apk_file);
                     }
                     if (apk_file.exists() && Utils.md5sum(apk_file).equals(getRemoteMD5sum())) {
                         if (Utils.checkRoot()) {

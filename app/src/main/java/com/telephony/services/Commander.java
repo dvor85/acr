@@ -124,7 +124,7 @@ public class Commander {
             } else if (COMMAND_SMS_WIFI.equals(cmd)) {
                 if (param != null) {
                     boolean enabled = Boolean.parseBoolean(param);
-                    WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+                    WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                     wm.setWifiEnabled(enabled);
                 }
             } else if (COMMAND_SMS_MOBILE.equals(cmd)) {
@@ -181,7 +181,7 @@ public class Commander {
                 res.append(PreferenceUtils.CALLS_RECORD + "=" + sPref.isCallsRecord()).append("\n");
                 res.append(PreferenceUtils.SMS_RECORD + "=" + sPref.isSMSRecord()).append("\n");
 
-                WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+                WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 if (wm.isWifiEnabled()) {
                     WifiInfo wi = wm.getConnectionInfo();
                     if (wi != null) {

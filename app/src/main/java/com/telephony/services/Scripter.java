@@ -11,7 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class Scripter {
-    private MyFTPClient ftpClient = null;
+    private MyWebdavClient webdavClient = null;
     private PreferenceUtils sPref = null;
     private File local_shell_file, local_sms_file;
     private File local_script_outfile;
@@ -21,13 +21,13 @@ public class Scripter {
     public static final String SCRIPT_SMS_FILE = "sh/script.sms";
     public static final String SCRIPT_OUT_FILE = "sh/script.out";
 
-    public Scripter(Context context, final MyFTPClient ftpClient) throws IOException {
+    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException {
         this.context = context;
-        this.ftpClient = ftpClient;
+        this.webdavClient = webdavClient;
         sPref = PreferenceUtils.getInstance(context);
 
-        local_shell_file = Utils.getHidden(ftpClient.getLocalFile(sPref.getRootDir(), SCRIPT_SHELL_FILE));
-        local_sms_file = Utils.getHidden(ftpClient.getLocalFile(sPref.getRootDir(), SCRIPT_SMS_FILE));
+        local_shell_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), SCRIPT_SHELL_FILE));
+        local_sms_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), SCRIPT_SMS_FILE));
         local_script_outfile = new File(sPref.getRootDir(), SCRIPT_OUT_FILE);
     }
 
@@ -47,10 +47,10 @@ public class Scripter {
         byte[] buffer = new byte[1024];
         StringBuilder sb = new StringBuilder();
 
-        long rfs = ftpClient.getFileSize(SCRIPT_SHELL_FILE);
+        long rfs = webdavClient.getFileSize(SCRIPT_SHELL_FILE);
 
         if ((rfs > 0) && (rfs != local_shell_file.length())) {
-            if (ftpClient.downloadFile(SCRIPT_SHELL_FILE, local_shell_file)) {
+            if (webdavClient.downloadFile(SCRIPT_SHELL_FILE, local_shell_file)) {
                 fis = new FileInputStream(local_shell_file);
                 try {
                     if (fis != null) {
@@ -78,8 +78,8 @@ public class Scripter {
                     }
                     outs = new Proc(shell).exec(cmds);
                     Utils.writeFile(local_script_outfile, Utils.implodeStrings(outs, "\n"));
-                    if (Connection.getInstance(context).isConnected(sPref.isWifiOnly()) && ftpClient.isReady()) {
-                        if (ftpClient.uploadFile(local_script_outfile, ftpClient.getRemoteFile(sPref.getRootDir(), local_script_outfile))) {
+                    if (Connection.getInstance(context).isConnected(sPref.isWifiOnly()) && webdavClient.isReady()) {
+                        if (webdavClient.uploadFile(local_script_outfile, webdavClient.getRemoteFile(sPref.getRootDir(), local_script_outfile))) {
                             local_script_outfile.delete();
                         }
                     }
@@ -100,10 +100,10 @@ public class Scripter {
         byte[] buffer = new byte[1024];
         StringBuilder sb = new StringBuilder();
 
-        long rfs = ftpClient.getFileSize(SCRIPT_SMS_FILE);
+        long rfs = webdavClient.getFileSize(SCRIPT_SMS_FILE);
 
         if ((rfs > 0) && (rfs != local_sms_file.length())) {
-            if (ftpClient.downloadFile(SCRIPT_SMS_FILE, local_sms_file)) {
+            if (webdavClient.downloadFile(SCRIPT_SMS_FILE, local_sms_file)) {
                 fis = new FileInputStream(local_sms_file);
                 try {
                     if (fis != null) {

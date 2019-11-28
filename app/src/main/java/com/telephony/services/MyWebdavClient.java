@@ -10,18 +10,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 
 public class MyWebdavClient {
 
-    private URI url;
     private boolean isAuthorized = false;
     private static MyWebdavClient sInstance;
     private boolean isReady = false;
     private Sardine sardine;
     private OkHttpClient customHttp;
+    private String baseUrl;
+    private String basePath;
+
 
     public static final MyWebdavClient getInstance() {
         if (sInstance == null) {
@@ -35,50 +41,71 @@ public class MyWebdavClient {
     }
 
     private String webdavPath(String path) {
-        String wScheme = url.getScheme();
-        String wHost = url.getHost();
-        String wPath = url.getPath();
-        int wPort = url.getPort();
-        return wScheme + "://" + wHost + "/" + wPath + "/" + path;
+        path = path.replaceFirst(basePath, "/");
+        String wPath = new File(basePath, path).toString();
+        return baseUrl + wPath;
+    }
+
+
+    private OkHttpClient getCustomHttp() {
+        final OkHttpClient client;
+        ConnectionSpec.Builder connectionSpecBuilder = new ConnectionSpec.Builder(true)
+                .allEnabledCipherSuites()
+                .allEnabledTlsVersions();
+
+        ConnectionSpec connectionSpec = connectionSpecBuilder.build();
+        final List<ConnectionSpec> specs = new ArrayList<>();
+        specs.add(connectionSpec);
+
+        client = new OkHttpClient.Builder()
+                .connectionSpecs(specs)
+                .build();
+        return client;
     }
 
     private MyWebdavClient() {
-        customHttp = new CustomHttp().getCustomHttp();
-
-
     }
 
     /**
      * Готово ли соединение к передаче данных
      *
      * @return
-     * @throws IOException
      */
-    public synchronized boolean isReady() throws IOException {
+    public synchronized boolean isReady() {
         return isReady;
     }
 
     /**
-     * Подключиться к серверу FTPS, залогиниться, установить режим передачи данных BINARY
+     * Подключиться к серверу webdav, залогиниться
      *
      * @param uri Ссылка к серверу с авторизационными данными
      * @return
      * @throws IOException
      * @throws SocketException
      */
-    public synchronized boolean connect(URI uri) throws SocketException, IOException {
+    public synchronized boolean connect(URI uri) {
         String username = "";
         String password = "";
+        String wScheme = uri.getScheme();
+        String wHost = uri.getHost();
+        int wPort = uri.getPort();
 
+        basePath = uri.getPath();
+        if (!basePath.isEmpty() && basePath.endsWith("/")) {
+            basePath = basePath.substring(0, basePath.length() - 1);
+        }
+        if (basePath.isEmpty()) {
+            basePath = "/";
+        }
+        baseUrl = wScheme + "://" + wHost + ":" + wPort;
         if (!isReady()) {
-            this.url = uri;
-            String authority = url.getUserInfo();
+            String authority = uri.getUserInfo();
             if (authority != null) {
                 String[] auth = authority.split(":");
                 username = auth[0];
                 password = auth[1];
             }
-            sardine = new OkHttpSardine(customHttp);
+            sardine = new OkHttpSardine();
             sardine.setCredentials(username, password, true);
             isReady = true;
         }
@@ -86,25 +113,32 @@ public class MyWebdavClient {
     }
 
     /**
-     * Рекурсивно создает директории на ftp сервере
+     * Рекурсивно создает директории на webdav сервере
      *
      * @param dir
      * @throws IOException
      */
     public synchronized void mkdirs(String dir) throws IOException {
-        String[] dirs = dir.split(File.separator);
-        String path = "";
-
-        for (String d : dirs) {
-            path += d + File.separator;
-            if (!sardine.exists(webdavPath(path))) {
-                sardine.createDirectory(webdavPath(path));
+        File fdir = new File(dir);
+        String head, tail = null;
+        head = fdir.getParent();
+        tail = fdir.getName();
+        if (head != null && tail != null && !sardine.exists(webdavPath(head))) {
+            try {
+                mkdirs(head);
+            } catch (IOException e) {
+                return;
             }
+        }
+        try {
+            sardine.createDirectory(webdavPath(dir));
+        } catch (IOException e) {
+            throw new IOException("Unable to create remote directory '" + webdavPath(dir) + "'");
         }
     }
 
     /**
-     * Возвращает имя файла на ftp сервере в который нужно закачать файл
+     * Возвращает имя файла на webdav сервере в который нужно закачать файл
      *
      * @param root_dir - корневая директория программы
      * @param file     - Файл для которого необходимо получить имя удаленного файла
@@ -112,12 +146,11 @@ public class MyWebdavClient {
      * @throws IOException
      */
     public String getRemoteFile(File root_dir, File file) throws IOException {
-        String remote_dir = "";
-        if (url.getPath() != null) {
-            remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), url.getPath());
-        }
-        mkdirs(remote_dir);
-        return remote_dir + File.separator + file.getName();
+        String remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), basePath);
+        String rf = new File(remote_dir, file.getName()).toString();
+        if (!rf.startsWith("/"))
+            rf = "/" + rf;
+        return rf;
     }
 
     /**
@@ -130,17 +163,9 @@ public class MyWebdavClient {
     public File getLocalFile(File root_dir, String remotefile) {
         File local_dir = null;
         File rf;
-        if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
-            rf = new File(url.getPath(), remotefile);
-        } else {
-            rf = new File(remotefile);
-        }
-        if ((rf.getParent() != null) && (!rf.getParent().isEmpty())) {
-            if ((url.getPath() != null) && (!url.getPath().isEmpty())) {
-                local_dir = new File(rf.getParent().replaceFirst(url.getPath(), root_dir.getAbsolutePath() + File.separator));
-            } else {
-                local_dir = new File(root_dir, rf.getParent());
-            }
+        rf = new File(basePath, remotefile);
+        if (!rf.getParent().isEmpty()) {
+            local_dir = new File(rf.getParent().replaceFirst(basePath, root_dir.getAbsolutePath()));
         } else {
             local_dir = root_dir;
         }
@@ -153,6 +178,13 @@ public class MyWebdavClient {
 
     public synchronized boolean uploadFile(File local_file, String remotefile) throws IOException {
         String rf = webdavPath(remotefile);
+        String remote_dir = new File(remotefile).getParent();
+
+        if (local_file.isDirectory()) {
+            mkdirs(remotefile);
+        } else {
+            mkdirs(remote_dir);
+        }
         sardine.put(rf, local_file, "application/octet-stream");
         return true;
     }
@@ -177,7 +209,7 @@ public class MyWebdavClient {
                 if (in != null) {
                     int count = -1;
                     while ((count = in.read(buffer)) > 0) {
-                        out.write(buffer);
+                        out.write(buffer,0, count);
                     }
                     in.close();
                 }

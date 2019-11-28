@@ -114,13 +114,13 @@ public class SuperService extends Service {
                     if (webdavClient.connect(new URI(url))) {
                         switch (command) {
                             case COMMAND_RUN_SCRIPTER:
-                                scp = new Scripter(context, MyFTPClient.getInstance());
+                                scp = new Scripter(context, webdavClient);
                                 scp.execSMScript();
                                 scp.execShellScript();
                                 break;
 
                             case COMMAND_RUN_UPDATER:
-                                upd = new Updater(context, MyFTPClient.getInstance());
+                                upd = new Updater(context, webdavClient);
                                 if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
                                     upd.updateAPK();
                                 }
