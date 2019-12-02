@@ -131,11 +131,12 @@ public class SuperService extends Service {
                                     @Override
                                     public boolean accept(File f) {
                                         Date today = new Date();
+
                                         return f.isDirectory()
                                                 || (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
                                     }
                                 });
-                                String remotefile = "";
+                                URI remotefile;
                                 for (File file : list) {
                                     try {
                                         if (file.isFile()) {

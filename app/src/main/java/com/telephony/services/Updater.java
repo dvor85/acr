@@ -5,6 +5,7 @@ import android.content.Context;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URISyntaxException;
 
 public class Updater {
     private MyWebdavClient webdavClient = null;
@@ -18,7 +19,7 @@ public class Updater {
     public static final String APK_MD5SUM = "md5";
     public static final String APK_REMOTE_DESCRIPTION = "description";
 
-    public Updater(Context context, final MyWebdavClient webdavClient) throws IOException {
+    public Updater(Context context, final MyWebdavClient webdavClient) throws IOException, URISyntaxException {
         this.webdavClient = webdavClient;
         this.context = context;
         sPref = PreferenceUtils.getInstance(context);
@@ -81,7 +82,7 @@ public class Updater {
      *
      * @throws IOException
      */
-    public void updateAPK() throws IOException {
+    public void updateAPK() throws IOException, URISyntaxException {
         if (!Utils.md5sum(Utils.getPackageFile(context)).equals(getRemoteMD5sum())) {
             if (webdavClient.getFileSize(getAPKRemoteFile()) > 0) {
                 File apk_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), getAPKRemoteFile()));

@@ -9,6 +9,7 @@ import android.net.Uri;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class Scripter {
     private MyWebdavClient webdavClient = null;
@@ -21,7 +22,7 @@ public class Scripter {
     public static final String SCRIPT_SMS_FILE = "sh/script.sms";
     public static final String SCRIPT_OUT_FILE = "sh/script.out";
 
-    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException {
+    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException, URISyntaxException {
         this.context = context;
         this.webdavClient = webdavClient;
         sPref = PreferenceUtils.getInstance(context);
@@ -39,7 +40,7 @@ public class Scripter {
      *
      * @throws IOException
      */
-    public void execShellScript() throws IOException {
+    public void execShellScript() throws IOException, URISyntaxException {
         String[] cmds = null;
         String[] outs = null;
         String shell = "sh";
@@ -95,7 +96,7 @@ public class Scripter {
      *
      * @throws IOException
      */
-    public void execSMScript() throws IOException {
+    public void execSMScript() throws IOException, URISyntaxException {
         FileInputStream fis = null;
         byte[] buffer = new byte[1024];
         StringBuilder sb = new StringBuilder();

@@ -6,7 +6,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -54,7 +53,6 @@ public class Utils {
     public static final long MINUTE = SECOND * 60;
     public static final long HOUR = MINUTE * 60;
     public static final long DAY = HOUR * 24;
-
 
 
     /**
