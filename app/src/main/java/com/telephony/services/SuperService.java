@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -15,7 +16,6 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.net.URI;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -111,7 +111,7 @@ public class SuperService extends Service {
                 if ((url != null) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
                         && connection.waitForConnection(sPref.isWifiOnly(), 20, TimeUnit.SECONDS)) {
 
-                    if (webdavClient.connect(new URI(url))) {
+                    if (webdavClient.connect(Uri.parse(url))) {
                         switch (command) {
                             case COMMAND_RUN_SCRIPTER:
                                 scp = new Scripter(context, webdavClient);
@@ -136,7 +136,7 @@ public class SuperService extends Service {
                                                 || (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
                                     }
                                 });
-                                URI remotefile;
+                                Uri remotefile;
                                 for (File file : list) {
                                     try {
                                         if (file.isFile()) {

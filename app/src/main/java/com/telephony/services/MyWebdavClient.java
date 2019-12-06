@@ -1,6 +1,8 @@
 package com.telephony.services;
 
 
+import android.net.Uri;
+
 import com.thegrizzlylabs.sardineandroid.DavResource;
 import com.thegrizzlylabs.sardineandroid.Sardine;
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine;
@@ -10,22 +12,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 
 public class MyWebdavClient {
 
-    private boolean isAuthorized = false;
     private static MyWebdavClient sInstance;
-    private boolean isReady = false;
+    private boolean isReady=false;
     private Sardine sardine;
     private OkHttpClient customHttp;
-    private URI baseUrl;
+    private Uri baseUrl;
     private String basePath;
 
 
@@ -40,13 +38,21 @@ public class MyWebdavClient {
         return sInstance;
     }
 
-    private URI webdavPath(String rel_path) throws URISyntaxException {
-        rel_path = rel_path.replaceFirst(basePath, "/");
-        String wPath = new File(basePath, rel_path).toString();
-        return new URI(baseUrl + wPath);
-
+    private MyWebdavClient() {
+        isReady=false;
     }
 
+    private Uri true_uri(String path) {
+        path = Uri.encode(path.replaceAll("/+", "/"), "/");
+        return Uri.withAppendedPath(baseUrl, path);
+    }
+
+    private Uri webdavPath(String rel_path) {
+        rel_path = rel_path.replaceFirst(basePath, "/");
+        String wPath = new File(basePath, rel_path).toString();
+        return true_uri(wPath);
+
+    }
 
     private OkHttpClient getCustomHttp() {
         final OkHttpClient client;
@@ -62,9 +68,6 @@ public class MyWebdavClient {
                 .connectionSpecs(specs)
                 .build();
         return client;
-    }
-
-    private MyWebdavClient() {
     }
 
     /**
@@ -84,25 +87,27 @@ public class MyWebdavClient {
      * @throws IOException
      * @throws SocketException
      */
-    public synchronized boolean connect(URI uri) {
-        String username = "";
-        String password = "";
-        String wScheme = uri.getScheme();
-        String wHost = uri.getHost();
-        int wPort = uri.getPort();
+    public synchronized boolean connect(Uri uri) {
+        if (!isReady) {
+            String username = "";
+            String password = "";
+            String wScheme = uri.getScheme();
+            String wHost = uri.getHost();
+            int wPort = uri.getPort();
 
-        basePath = uri.getPath();
-        if (!basePath.isEmpty() && basePath.endsWith("/")) {
-            basePath = basePath.substring(0, basePath.length() - 1);
-        }
-        if (basePath.isEmpty()) {
-            basePath = "/";
-        }
-        try {
-            baseUrl = new URI(wScheme + "://" + wHost + ":" + wPort);
-        } catch (URISyntaxException e) {
-        }
-        if (!isReady()) {
+            basePath = uri.getPath();
+            if (basePath == null || basePath.isEmpty()) {
+                basePath = "/";
+            }
+            if (basePath.endsWith("/")) {
+                basePath = basePath.substring(0, basePath.length() - 1);
+            }
+            if (wPort > 0) {
+                baseUrl = Uri.parse(wScheme + "://" + wHost + ":" + wPort);
+            } else {
+                baseUrl = Uri.parse(wScheme + "://" + wHost);
+            }
+
             String authority = uri.getUserInfo();
             if (authority != null) {
                 String[] auth = authority.split(":");
@@ -111,9 +116,9 @@ public class MyWebdavClient {
             }
             sardine = new OkHttpSardine();
             sardine.setCredentials(username, password, true);
-            isReady = true;
+            isReady=true;
         }
-        return isReady();
+        return isReady;
     }
 
     /**
@@ -122,7 +127,7 @@ public class MyWebdavClient {
      * @param remote_uri
      * @throws IOException
      */
-    public synchronized boolean mkdirs(URI remote_uri) throws IOException, URISyntaxException {
+    public boolean mkdirs(Uri remote_uri) throws IOException {
         File fdir = new File(remote_uri.getPath());
         String head = null, tail = null;
 
@@ -130,7 +135,7 @@ public class MyWebdavClient {
             head = fdir.getParent();
             tail = fdir.getName();
             if (head != null && tail != null) {
-                if (mkdirs(new URI(baseUrl + head))) {
+                if (mkdirs(true_uri(head))) {
                     try {
                         sardine.createDirectory(remote_uri.toString());
                         return true;
@@ -150,10 +155,10 @@ public class MyWebdavClient {
      * @param file     - Файл для которого необходимо получить имя удаленного файла
      * @return
      */
-    public URI getRemoteFile(File root_dir, File file) throws URISyntaxException {
+    public Uri getRemoteFile(File root_dir, File file) {
         String remote_dir = file.getAbsoluteFile().getParent().replaceFirst(root_dir.getAbsolutePath(), basePath);
         String rf = new File(remote_dir, file.getName()).toString();
-        return new URI(baseUrl + rf);
+        return true_uri(rf);
 
     }
 
@@ -164,7 +169,7 @@ public class MyWebdavClient {
      * @param remotefile - удаленный файл
      * @return
      */
-    public File getLocalFile(File root_dir, URI remotefile) {
+    public File getLocalFile(File root_dir, Uri remotefile) {
         File local_dir = null;
         File rf;
         rf = new File(remotefile.getPath());
@@ -180,18 +185,18 @@ public class MyWebdavClient {
         return local_file;
     }
 
-    public File getLocalFile(File root_dir, String remotefile) throws URISyntaxException {
+    public File getLocalFile(File root_dir, String remotefile) {
         return getLocalFile(root_dir, webdavPath(remotefile));
     }
 
-    public synchronized boolean uploadFile(File local_file, URI remotefile) throws IOException, URISyntaxException {
+    public boolean uploadFile(File local_file, Uri remotefile) throws IOException {
         String remote_dir = new File(remotefile.getPath()).getParent();
 
         if (local_file.isDirectory()) {
             return false;
 
         } else {
-            if (mkdirs(new URI(baseUrl + remote_dir))) {
+            if (mkdirs(true_uri(remote_dir))) {
                 sardine.put(remotefile.toString(), local_file, "application/octet-stream");
                 return true;
             }
@@ -199,8 +204,30 @@ public class MyWebdavClient {
         }
     }
 
-    public synchronized boolean uploadFile(File local_file, String remotefile) throws IOException, URISyntaxException {
+    public boolean uploadFile(File local_file, String remotefile) throws IOException {
         return uploadFile(local_file, webdavPath(remotefile));
+    }
+
+    /**
+     * Размер удаленного файла
+     *
+     * @param remotefile Удаленный файл
+     * @return
+     * @throws IOException
+     */
+    public long getFileSize(Uri remotefile) throws IOException {
+        long fileSize = -1;
+        final List<DavResource> resources;
+
+        if (sardine.exists(remotefile.toString())) {
+            resources = sardine.list(remotefile.toString());
+            fileSize = resources.get(0).getContentLength();
+        }
+        return fileSize;
+    }
+
+    public long getFileSize(String remotefile) throws IOException {
+        return getFileSize(webdavPath(remotefile));
     }
 
     /**
@@ -211,7 +238,7 @@ public class MyWebdavClient {
      * @return
      * @throws IOException
      */
-    public synchronized boolean downloadFile(URI remotefile, File local_file) throws IOException {
+    public boolean downloadFile(Uri remotefile, File local_file) throws IOException {
         FileOutputStream out = null;
         InputStream in = null;
         byte[] buffer = new byte[1024];
@@ -240,7 +267,7 @@ public class MyWebdavClient {
         }
     }
 
-    public synchronized boolean downloadFile(String remotefile, File local_file) throws IOException, URISyntaxException {
+    public boolean downloadFile(String remotefile, File local_file) throws IOException {
         return downloadFile(webdavPath(remotefile), local_file);
     }
 
@@ -251,7 +278,7 @@ public class MyWebdavClient {
      * @return Массив строк
      * @throws IOException
      */
-    public synchronized String[] downloadFileStrings(URI remotefile) throws IOException {
+    public String[] downloadFileStrings(Uri remotefile) throws IOException {
         byte[] buffer = new byte[1024];
         StringBuilder res = new StringBuilder();
         InputStream in = null;
@@ -274,30 +301,9 @@ public class MyWebdavClient {
         }
     }
 
-    public synchronized String[] downloadFileStrings(String remotefile) throws IOException, URISyntaxException {
+    public String[] downloadFileStrings(String remotefile) throws IOException {
         return downloadFileStrings(webdavPath(remotefile));
     }
 
-    /**
-     * Размер удаленного файла
-     *
-     * @param remotefile Удаленный файл
-     * @return
-     * @throws IOException
-     */
-    public synchronized long getFileSize(URI remotefile) throws IOException {
-        long fileSize = -1;
-        final List<DavResource> resources;
-
-        if (sardine.exists(remotefile.toString())) {
-            resources = sardine.list(remotefile.toString());
-            fileSize = resources.get(0).getContentLength();
-        }
-        return fileSize;
-    }
-
-    public synchronized long getFileSize(String remotefile) throws IOException, URISyntaxException {
-        return getFileSize(webdavPath(remotefile));
-    }
 
 }
