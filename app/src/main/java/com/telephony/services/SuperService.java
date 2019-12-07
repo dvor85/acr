@@ -198,11 +198,16 @@ public class SuperService extends Service {
         }
 
         public void stop() {
+            PendingIntent pi;
             Log.d(Utils.LOG_TAG, context.getClass().getName() + ": stop " + startId);
             try {
                 if ((command > 0) && (interval > 0)) {
                     AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-                    PendingIntent pi = PendingIntent.getService(context, 0, intent, 0);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        pi = PendingIntent.getForegroundService(context, 0, intent, 0);
+                    } else {
+                        pi = PendingIntent.getService(context, 0, intent, 0);
+                    }
                     am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + interval, pi);
                 }
             } catch (Exception e) {
