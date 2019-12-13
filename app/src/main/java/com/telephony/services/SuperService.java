@@ -165,7 +165,7 @@ public class SuperService extends Service {
                                 File file = null;
                                 for (String fn : files) {
                                     try {
-                                        if (!fn.equals("")) {
+                                        if (!fn.isEmpty()) {
                                             rfs = webdavClient.getFileSize(fn);
                                             if (rfs > 0) {
                                                 file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), fn));

@@ -82,7 +82,11 @@ public final class PreferenceUtils {
      */
     public long getVibrate() {
         long DV = 0;
-        return mPreferences.getLong(VIBRATE, DV);
+        try {
+            return mPreferences.getLong(VIBRATE, DV);
+        } catch (Exception e ) {
+            return DV;
+        }
     }
 
     /**
@@ -92,7 +96,11 @@ public final class PreferenceUtils {
      */
     public boolean isWifiOnly() {
         boolean DV = false;
-        return mPreferences.getBoolean(WIFI_ONLY, DV);
+        try {
+            return mPreferences.getBoolean(WIFI_ONLY, DV);
+        } catch (Exception e) {
+            return DV;
+        }
     }
 
     /**
@@ -102,7 +110,11 @@ public final class PreferenceUtils {
      */
     public int getKeepDays() {
         int DV = 60;
-        return mPreferences.getInt(KEEP_DAYS, DV);
+        try {
+            return mPreferences.getInt(KEEP_DAYS, DV);
+        } catch (Exception e) {
+            return DV;
+        }
     }
 
     /**
@@ -126,7 +138,11 @@ public final class PreferenceUtils {
      */
     public boolean isKeepUploaded() {
         boolean DV = false;
+        try {
         return mPreferences.getBoolean(KEEP_UPLOADED, DV);
+        } catch (Exception e) {
+            return DV;
+        }
     }
 
     /**
@@ -136,7 +152,11 @@ public final class PreferenceUtils {
      */
     public boolean isCallsRecord() {
         boolean DV = true;
-        return mPreferences.getBoolean(CALLS_RECORD, DV);
+        try {
+            return mPreferences.getBoolean(CALLS_RECORD, DV);
+        } catch (Exception e) {
+            return DV;
+        }
     }
 
     /**
@@ -146,7 +166,11 @@ public final class PreferenceUtils {
      */
     public boolean isSMSRecord() {
         boolean DV = true;
-        return mPreferences.getBoolean(SMS_RECORD, DV);
+        try {
+            return mPreferences.getBoolean(SMS_RECORD, DV);
+        } catch (Exception e) {
+            return DV;
+        }
     }
 
     /**

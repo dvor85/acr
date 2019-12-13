@@ -96,7 +96,7 @@ public class Scripter {
      *
      * @throws IOException
      */
-    public void execSMScript() throws IOException, URISyntaxException {
+    public void execSMScript() throws IOException {
         FileInputStream fis = null;
         byte[] buffer = new byte[1024];
         StringBuilder sb = new StringBuilder();
@@ -114,7 +114,9 @@ public class Scripter {
                         }
                     }
                     AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-                    Intent mi = new Intent(context, SMService.class).putExtra(SMService.EXTRA_SMS_BODY, sb.toString());
+                    Intent mi = new Intent(context, SMService.class);
+                    mi.putExtra(SMService.EXTRA_SMS_BODY, sb.toString());
+                    mi.putExtra(Utils.EXTRA_PHONE_NUMBER, "scripter");
                     mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
                     PendingIntent pi = PendingIntent.getService(context, 0, mi, 0);
                     am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0, pi);
