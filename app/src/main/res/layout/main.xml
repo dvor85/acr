@@ -12,8 +12,8 @@
         android:layout_weight="20"
         android:ems="10"
         android:gravity="start|top"
-        android:hint="Enter command"
-        android:inputType="textMultiLine" />
+        android:hint="@string/help"
+        android:inputType="textMultiLine|textNoSuggestions" />
 
     <Button
         android:id="@+id/run_button"

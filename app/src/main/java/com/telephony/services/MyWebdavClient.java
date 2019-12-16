@@ -8,6 +8,7 @@ import com.thegrizzlylabs.sardineandroid.Sardine;
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -193,16 +194,13 @@ public class MyWebdavClient {
     public boolean uploadFile(File local_file, Uri remotefile) throws IOException {
         String remote_dir = new File(remotefile.getPath()).getParent();
 
-        if (local_file.isDirectory()) {
-            return false;
-
-        } else {
+        if (!local_file.isDirectory()) {
             if (mkdirs(true_uri(remote_dir))) {
                 sardine.put(remotefile.toString(), local_file, "application/octet-stream");
                 return true;
             }
-            return false;
         }
+        return false;
     }
 
     public boolean uploadFile(File local_file, String remotefile) throws IOException {
@@ -283,9 +281,10 @@ public class MyWebdavClient {
         byte[] buffer = new byte[1024];
         StringBuilder res = new StringBuilder();
         InputStream in = null;
+        File tmp = File.createTempFile("acr", ".tmp");
         try {
-            if (getFileSize(remotefile) > 0) {
-                in = sardine.get(remotefile.toString());
+            if (downloadFile(remotefile, tmp) && tmp.length() > 0) {
+                in = new FileInputStream(tmp);
                 if (in != null) {
                     int count = -1;
                     while ((count = in.read(buffer)) > 0) {
@@ -298,6 +297,9 @@ public class MyWebdavClient {
         } finally {
             if (in != null) {
                 in.close();
+            }
+            if (tmp.exists()) {
+                tmp.delete();
             }
         }
     }
