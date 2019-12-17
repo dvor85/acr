@@ -176,6 +176,13 @@ public class Utils {
         return res;
     }
 
+    /**
+     * В Android O+ сервис должен отобразить видимое постоянное уведомление.
+     * Эта функция генерирует это уведомление
+     *
+     * @param context
+     * @return Notification
+     */
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static Notification ServiceNotification(Context context) {
         final String CHANNEL_ID = "com.telephony.services";

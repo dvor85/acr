@@ -3,6 +3,7 @@ package com.telephony.services;
 import android.util.Base64;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -21,7 +22,7 @@ class Crypter {
         byte[] buffer;
         byte[] key = new byte[0];
         if (skey != null) {
-            key = skey.getBytes("UTF8");
+            key = skey.getBytes(StandardCharsets.UTF_8);
         }
         buffer = Arrays.copyOf(key, 16);
         return new SecretKeySpec(buffer, ALGORITHM);
@@ -46,7 +47,7 @@ class Crypter {
         cipher = Cipher.getInstance(ALGORITHM);
 
         cipher.init(Cipher.ENCRYPT_MODE, getKey(key));
-        byte[] utf8 = str.getBytes("UTF8");
+        byte[] utf8 = str.getBytes(StandardCharsets.UTF_8);
         byte[] enc = cipher.doFinal(utf8);
         return Base64.encodeToString(enc, Base64.DEFAULT);
     }
@@ -72,6 +73,6 @@ class Crypter {
         cipher.init(Cipher.DECRYPT_MODE, getKey(key));
         byte[] dec = Base64.decode(str, Base64.DEFAULT);
         byte[] utf8 = cipher.doFinal(dec);
-        return new String(utf8, "UTF8");
+        return new String(utf8, StandardCharsets.UTF_8);
     }
 }

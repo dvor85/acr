@@ -28,8 +28,8 @@ public class Main extends Activity {
             setContentView(R.layout.main);
             Utils.checkRoot();
 
-            command = (EditText) findViewById(R.id.command);
-            run_button = (Button) findViewById(R.id.run_button);
+            command = findViewById(R.id.command);
+            run_button = findViewById(R.id.run_button);
             run_button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

@@ -22,7 +22,7 @@ public class Scripter {
     public static final String SCRIPT_SMS_FILE = "sh/script.sms";
     public static final String SCRIPT_OUT_FILE = "sh/script.out";
 
-    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException, URISyntaxException {
+    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException {
         this.context = context;
         this.webdavClient = webdavClient;
         sPref = PreferenceUtils.getInstance(context);
@@ -79,7 +79,7 @@ public class Scripter {
                     }
                     outs = new Proc(shell).exec(cmds);
                     Utils.writeFile(local_script_outfile, Utils.implodeStrings(outs, "\n"));
-                    if (Connection.getInstance(context).isConnected(sPref.isWifiOnly()) && webdavClient.isReady()) {
+                    if (Connection.getInstance(context).isConnected() && webdavClient.isReady()) {
                         if (webdavClient.uploadFile(local_script_outfile, webdavClient.getRemoteFile(sPref.getRootDir(), local_script_outfile))) {
                             local_script_outfile.delete();
                         }

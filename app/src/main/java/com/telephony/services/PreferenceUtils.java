@@ -84,7 +84,7 @@ public final class PreferenceUtils {
         long DV = 0;
         try {
             return mPreferences.getLong(VIBRATE, DV);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             return DV;
         }
     }
@@ -139,7 +139,7 @@ public final class PreferenceUtils {
     public boolean isKeepUploaded() {
         boolean DV = false;
         try {
-        return mPreferences.getBoolean(KEEP_UPLOADED, DV);
+            return mPreferences.getBoolean(KEEP_UPLOADED, DV);
         } catch (Exception e) {
             return DV;
         }

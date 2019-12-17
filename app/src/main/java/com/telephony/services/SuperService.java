@@ -3,11 +3,8 @@ package com.telephony.services;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
@@ -21,6 +18,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SuperService extends Service {
@@ -32,8 +30,8 @@ public class SuperService extends Service {
     public static final int COMMAND_RUN_UPLOAD = 3;
     public static final int COMMAND_RUN_DOWNLOAD = 4;
 
-    private BroadcastReceiver connectionReceiver;
     private Connection connection;
+    private AtomicBoolean isConnected = new AtomicBoolean(false);
     private PreferenceUtils sPref = null;
     private ExecutorService es;
     private MyWebdavClient webdavClient = null;
@@ -48,6 +46,7 @@ public class SuperService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        // В Android O+ нужно вывести постоянное уведомление и перевести сервис в Foreground
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForeground(oneTimeID, Utils.ServiceNotification(this));
         }
@@ -57,17 +56,6 @@ public class SuperService extends Service {
             sPref = PreferenceUtils.getInstance(this);
             connection = Connection.getInstance(this);
             webdavClient = MyWebdavClient.getInstance();
-            connectionReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    Log.d(Utils.LOG_TAG, intent.toUri(Intent.URI_INTENT_SCHEME));
-                    synchronized (connection) {
-                        connection.notifyAll();
-                    }
-                }
-            };
-
-            registerReceiver(connectionReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,7 +97,7 @@ public class SuperService extends Service {
                 Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
                 String url = sPref.getRemoteUrl();
                 if ((url != null) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
-                        && connection.waitForConnection(sPref.isWifiOnly(), 20, TimeUnit.SECONDS)) {
+                        && connection.waitForConnection(20, TimeUnit.SECONDS)) {
 
                     if (webdavClient.connect(Uri.parse(url))) {
                         switch (command) {
@@ -145,7 +133,7 @@ public class SuperService extends Service {
                                                 Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
                                                 if (!webdavClient.uploadFile(file, remotefile)) {
                                                     continue;
-                                                };
+                                                }
                                             }
                                             if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
                                                 file.delete();
@@ -155,7 +143,7 @@ public class SuperService extends Service {
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        if (!(connection.isConnected(sPref.isWifiOnly()) && webdavClient.isReady())) {
+                                        if (!(connection.isConnected() && webdavClient.isReady())) {
                                             break;
                                         }
                                     }
@@ -181,7 +169,7 @@ public class SuperService extends Service {
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        if (!(connection.isConnected(sPref.isWifiOnly()) && webdavClient.isReady())) {
+                                        if (!(connection.isConnected() && webdavClient.isReady())) {
                                             break;
                                         }
                                     }
@@ -238,14 +226,11 @@ public class SuperService extends Service {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                unregisterReceiver(connectionReceiver);
-            } catch (Exception e) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                stopForeground(STOP_FOREGROUND_DETACH | STOP_FOREGROUND_REMOVE);
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            stopForeground(STOP_FOREGROUND_DETACH | STOP_FOREGROUND_REMOVE);
-        }
+
         Log.d(Utils.LOG_TAG, getClass().getName() + " Destroy");
     }
 

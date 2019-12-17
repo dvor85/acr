@@ -55,6 +55,7 @@ public class CallRecordService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        // В Android O+ нужно вывести постоянное уведомление и перевести сервис в Foreground
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForeground(oneTimeID, Utils.ServiceNotification(this));
         }

@@ -22,7 +22,7 @@ import okhttp3.OkHttpClient;
 public class MyWebdavClient {
 
     private static MyWebdavClient sInstance;
-    private boolean isReady=false;
+    private boolean isReady = false;
     private Sardine sardine;
     private OkHttpClient customHttp;
     private Uri baseUrl;
@@ -41,7 +41,7 @@ public class MyWebdavClient {
     }
 
     private MyWebdavClient() {
-        isReady=false;
+        isReady = false;
     }
 
     private Uri true_uri(String path) {
@@ -118,7 +118,7 @@ public class MyWebdavClient {
             }
             sardine = new OkHttpSardine();
             sardine.setCredentials(username, password, true);
-            isReady=true;
+            isReady = true;
         }
         return isReady;
     }
