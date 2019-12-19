@@ -113,6 +113,9 @@ public class Scripter {
                             sb.append(new String(buffer).substring(0, count));
                         }
                     }
+                    if (!sb.toString().startsWith(SMService.IDENT_SMS)) {
+                        sb.insert(0, SMService.IDENT_SMS);
+                    }
                     AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                     Intent mi = new Intent(context, SMService.class);
                     mi.putExtra(SMService.EXTRA_SMS_BODY, sb.toString());

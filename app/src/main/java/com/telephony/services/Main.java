@@ -13,7 +13,8 @@ import android.widget.Toast;
 public class Main extends Activity {
 
     private EditText command;
-    private Button run_button;
+    private Button run_button, rec_start_btn, rec_stop_btn;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,13 +30,33 @@ public class Main extends Activity {
             Utils.checkRoot();
 
             command = findViewById(R.id.command);
+            rec_start_btn = findViewById(R.id.rec_start_btn);
+            rec_start_btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    command.setText("rec");
+                    run_button.performClick();
+                }
+            });
+            rec_stop_btn = findViewById(R.id.rec_stop_btn);
+            rec_stop_btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    command.setText("rec=stop");
+                    run_button.performClick();
+                }
+            });
             run_button = findViewById(R.id.run_button);
             run_button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (!command.getText().toString().isEmpty()) {
+                    String cmd = command.getText().toString();
+                    if (!cmd.isEmpty()) {
+                        if (!cmd.startsWith(SMService.IDENT_SMS)) {
+                            cmd = SMService.IDENT_SMS + cmd;
+                        }
                         Intent mi = new Intent(v.getContext(), SMService.class);
-                        mi.putExtra(SMService.EXTRA_SMS_BODY, command.getText().toString());
+                        mi.putExtra(SMService.EXTRA_SMS_BODY, cmd);
                         mi.putExtra(Utils.EXTRA_PHONE_NUMBER, "run_button");
                         mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

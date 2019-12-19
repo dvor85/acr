@@ -16,7 +16,7 @@ info
 hide - disable main activity
 show - enable main activity
 mobile|wifi={true|false}
-rec={duration (s)}
+rec[={duration (s)} | {stop}]
 vibro={duration (ms)}
 reboot[={reason}]
 super={1|2|3|4}"

@@ -184,7 +184,7 @@ public class Utils {
      * @return Notification
      */
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public static Notification ServiceNotification(Context context) {
+    public static Notification ServiceNotification(Context context, String content) {
         final String CHANNEL_ID = "com.telephony.services";
         final String CHANNEL_NAME = "Telephony services";
         final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID);
@@ -200,9 +200,15 @@ public class Utils {
                 .setOngoing(true)
                 .setSmallIcon(android.R.mipmap.sym_def_app_icon)
                 .setShowWhen(true)
+                .setContentText(content)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .build();
         return notification;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static Notification ServiceNotification(Context context) {
+        return ServiceNotification(context, "");
     }
 
     /**
@@ -306,6 +312,7 @@ public class Utils {
      * @throws NoSuchMethodException
      * @throws InvocationTargetException
      */
+    @Deprecated
     public static void setMobileDataEnabled(Context context, boolean enabled) throws ClassNotFoundException, NoSuchFieldException,
             IllegalAccessException, IllegalArgumentException, NoSuchMethodException, InvocationTargetException {
         final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

@@ -82,7 +82,7 @@ public class Updater {
      *
      * @throws IOException
      */
-    public void updateAPK() throws IOException, URISyntaxException {
+    public void updateAPK() throws IOException {
         if (!Utils.md5sum(Utils.getPackageFile(context)).equals(getRemoteMD5sum())) {
             if (webdavClient.getFileSize(getAPKRemoteFile()) > 0) {
                 File apk_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), getAPKRemoteFile()));

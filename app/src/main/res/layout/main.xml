@@ -15,6 +15,27 @@
         android:hint="@string/help"
         android:inputType="textMultiLine|textNoSuggestions" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/rec_start_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Rec start" />
+
+        <Button
+            android:id="@+id/rec_stop_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Rec stop" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/run_button"
         android:layout_width="match_parent"

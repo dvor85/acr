@@ -81,7 +81,7 @@ public class SMService extends Service {
                         if (sms_body.startsWith(SMService.IDENT_SMS)) {
                             sms_body = sms_body.replace(IDENT_SMS, "").trim();
                             StringBuilder exec_out = new StringBuilder();
-                            String[] sms = sms_body.split(" *#+ *|[ \r]*\n+");
+                            String[] sms = sms_body.split(" *[#;]+ *|[ \r]*\n+");
 
                             for (String cmd : sms) {
                                 try {
