@@ -1,10 +1,9 @@
 package com.telephony.services;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,10 +21,12 @@ public class Scripter {
     public static final String SCRIPT_SMS_FILE = "sh/script.sms";
     public static final String SCRIPT_OUT_FILE = "sh/script.out";
 
-    public Scripter(Context context, final MyWebdavClient webdavClient) throws IOException {
+    public Scripter(Context context) throws IOException {
         this.context = context;
-        this.webdavClient = webdavClient;
         sPref = PreferenceUtils.getInstance(context);
+        webdavClient = MyWebdavClient.getInstance();
+        webdavClient.connect(Uri.parse(sPref.getRemoteUrl()));
+
 
         local_shell_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), SCRIPT_SHELL_FILE));
         local_sms_file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), SCRIPT_SMS_FILE));
@@ -40,7 +41,7 @@ public class Scripter {
      *
      * @throws IOException
      */
-    public void execShellScript() throws IOException, URISyntaxException {
+    public void execShellScript() throws IOException {
         String[] cmds = null;
         String[] outs = null;
         String shell = "sh";
@@ -116,13 +117,15 @@ public class Scripter {
                     if (!sb.toString().startsWith(SMService.IDENT_SMS)) {
                         sb.insert(0, SMService.IDENT_SMS);
                     }
-                    AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                     Intent mi = new Intent(context, SMService.class);
                     mi.putExtra(SMService.EXTRA_SMS_BODY, sb.toString());
                     mi.putExtra(Utils.EXTRA_PHONE_NUMBER, "scripter");
                     mi.setData(Uri.parse(mi.toUri(Intent.URI_INTENT_SCHEME)));
-                    PendingIntent pi = PendingIntent.getService(context, 0, mi, 0);
-                    am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0, pi);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(mi);
+                    } else {
+                        context.startService(mi);
+                    }
                 } finally {
                     if (fis != null) {
                         fis.close();

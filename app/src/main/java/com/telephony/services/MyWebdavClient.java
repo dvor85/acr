@@ -90,7 +90,7 @@ public class MyWebdavClient {
      * @throws SocketException
      */
     public synchronized boolean connect(Uri uri) {
-        if (!isReady) {
+        if (uri != null && !isReady) {
             String username = "";
             String password = "";
             String wScheme = uri.getScheme();
@@ -129,7 +129,7 @@ public class MyWebdavClient {
      * @param remote_uri
      * @throws IOException
      */
-    public boolean mkdirs(Uri remote_uri) throws IOException {
+    private boolean mkdirs(Uri remote_uri) throws IOException {
         File fdir = new File(remote_uri.getPath());
         String head = null, tail = null;
 
@@ -194,7 +194,7 @@ public class MyWebdavClient {
     public boolean uploadFile(File local_file, Uri remotefile) throws IOException {
         String remote_dir = new File(remotefile.getPath()).getParent();
 
-        if (!local_file.isDirectory()) {
+        if (isReady() && !local_file.isDirectory()) {
             if (mkdirs(true_uri(remote_dir))) {
                 sardine.put(remotefile.toString(), local_file, "application/octet-stream");
                 return true;
@@ -218,7 +218,7 @@ public class MyWebdavClient {
         long fileSize = -1;
         final List<DavResource> resources;
 
-        if (sardine.exists(remotefile.toString())) {
+        if (isReady() && sardine.exists(remotefile.toString())) {
             resources = sardine.list(remotefile.toString());
             fileSize = resources.get(0).getContentLength();
         }

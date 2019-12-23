@@ -18,8 +18,8 @@ android {
         minSdkVersion 21
         targetSdkVersion 22
         manifestPlaceholders
-        versionCode = 44
-        versionName = '3.0.5b'
+        versionCode = 45
+        versionName = '3.0.6b'
         resConfigs "en"
         resConfigs "nodpi"
         proguardFiles
