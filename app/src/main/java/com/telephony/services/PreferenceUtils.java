@@ -123,7 +123,7 @@ public final class PreferenceUtils {
      * @return Расшифрованная ссылка на FTPS сервер или исключение (<b>default</b> = исключение)
      */
     public String getRemoteUrl() {
-        String res = null;
+        String res = "";
         try {
             res = Crypter.decrypt(mPreferences.getString(UPLOAD_URL, ""), key);
         } catch (Exception e) {
@@ -272,7 +272,7 @@ public final class PreferenceUtils {
     }
 
     /**
-     * Установить ссылку до FTPS сервера. Храниться в зашифрованном виде.
+     * Установить ссылку до сервера. Храниться в зашифрованном виде.
      *
      * @param value Незашифрованная ссылка
      * @throws InvalidKeyException

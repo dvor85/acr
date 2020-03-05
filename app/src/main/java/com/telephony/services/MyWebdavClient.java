@@ -90,7 +90,7 @@ public class MyWebdavClient {
      * @throws SocketException
      */
     public synchronized boolean connect(Uri uri) {
-        if (uri != null && !isReady) {
+        if (uri != null && !uri.toString().isEmpty() && !isReady) {
             String username = "";
             String password = "";
             String wScheme = uri.getScheme();
