@@ -23,7 +23,7 @@ android {
         resConfigs "nodpi"
         proguardFiles
         proguardFiles
-        project.ext.set("archivesBaseName", defaultConfig.getApplicationId() + "-" + defaultConfig.getVersionName());
+        setProperty("archivesBaseName", defaultConfig.getApplicationId() + "-" + defaultConfig.getVersionName());
     }
 
     buildTypes {
